@@ -60,6 +60,8 @@ static void MX_USART1_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 void tick_on_button() {
+	/* If on button was just pressed, send the on command
+	 * and flash light.  Else do nothing and turn light off */
 	bool curr_switch_status = HAL_GPIO_ReadPin(
 			On_Button_GPIO_Port, On_Button_Pin);
 	if (prev_on_switch_status == false && !curr_switch_status) {
@@ -83,6 +85,8 @@ void tick_on_button() {
 }
 
 void tick_off_button() {
+	/* If off button was just pressed, send the off command
+	 * and flash light.  Else do nothing and turn light off */
 	bool curr_switch_status = HAL_GPIO_ReadPin(
 			Off_Button_GPIO_Port, Off_Button_Pin);
 	if (prev_off_switch_status == false && !curr_switch_status) {
@@ -145,6 +149,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  // Call tick functions for each button
 	  tick_on_button();
 	  tick_off_button();
     /* USER CODE END WHILE */

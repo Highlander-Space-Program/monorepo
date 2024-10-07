@@ -100,6 +100,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  // Don't need to do anything here since interrupt handles everything
 	  HAL_Delay(300);
     /* USER CODE END WHILE */
 
@@ -260,10 +261,11 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+  // If we get the on command turn on the light, else turn it off
   if (rx_buf[0] == 1) {
 	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
   }
-  else {
+  else if (rx_buf[0] == 0){
 	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
   }
   HAL_UART_Receive_IT(&huart1, rx_buf, 1); //You need to toggle a breakpoint on this line!
