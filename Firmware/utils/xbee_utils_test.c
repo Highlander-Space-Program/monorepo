@@ -2,6 +2,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+/* Creates super basic xbee tx request and prints it
+
+To compile, run gcc xbee_utils_test.c in terminal*/
+
 int main(void) {
     uint64_t destination = 0x000000000000FFFF;
     uint8_t payload[] = {0x00, 0x11};
