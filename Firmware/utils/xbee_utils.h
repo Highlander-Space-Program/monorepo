@@ -2,9 +2,15 @@
 #define __XBEE_UTILS_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 #define START_DELIMITER 0x7E
 #define TRANSMIT_REQUEST 0x10
+
+/* API to be able to send TX and RX packets to XBEE radios.
+More info on XBEE packets can be found at:
+https://www.digi.com/resources/documentation/DigiDocs/90002002/Default.htm#Containers/cont_frame_descriptions.htm?TocPath=Frame%2520descriptions%257C_____0
+*/
 
 void ConfigurePacket(uint8_t* packet, int packet_length) {
     /* Configures bytes common to all XBEE TX packets*/
@@ -34,15 +40,12 @@ void ConfigurePacket(uint8_t* packet, int packet_length) {
 }
 
 void ParseDestination(uint64_t destination, uint8_t* packet) {
-    /* Parses 64 bit destination into array of uint8_t*/
-    packet[4] = (uint8_t)(destination >> 56);
-    packet[5] = (uint8_t)((destination >> 48) & 0xFF);
-    packet[6] = (uint8_t)((destination >> 40) & 0xFF);
-    packet[7] = (uint8_t)((destination >> 32) & 0xFF);
-    packet[8] = (uint8_t)((destination >> 24) & 0xFF);
-    packet[9] = (uint8_t)((destination >> 16) & 0xFF);
-    packet[10] = (uint8_t)((destination >> 8) & 0xFF);
-    packet[11] = (uint8_t)((destination) & 0xFF);
+    /* Inserts destination into packet */
+
+    // adddress starts at 4 with MSB
+    for (int i = 0; i < 8; ++i) {
+        packet[i + 4] = (uint8_t)(destination >> (56 - (8 * i)) & 0xFF);
+    }
 }
 
 uint8_t* CreateXbeeTxPacket(uint64_t destination, uint8_t* payload, int payload_length, uint8_t* packet) {
