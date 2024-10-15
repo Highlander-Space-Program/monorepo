@@ -2,7 +2,6 @@
 #define __XBEE_UTILS_H
 
 #include <stdint.h>
-#include <stdio.h>
 
 #define START_DELIMITER 0x7E
 #define TRANSMIT_REQUEST 0x10
@@ -48,7 +47,7 @@ void ParseDestination(uint64_t destination, uint8_t* packet) {
     }
 }
 
-uint8_t* CreateXbeeTxPacket(uint64_t destination, uint8_t* payload, int payload_length, uint8_t* packet) {
+void CreateXbeeTxPacket(uint64_t destination, uint8_t* payload, int payload_length, uint8_t* packet) {
     /* Creates an XBEE TX request packet with a specified payload and destination and puts it in packet
     
     Args:
