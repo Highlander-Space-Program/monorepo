@@ -82,7 +82,7 @@ void ParseXbeeRxPacket(uint8_t* packet, int packet_length, uint8_t* buffer) {
         packet: uint8_t*, raw xbee packet
         packet_length: int, length of the packet
         buffer: uint8_t*, array with length of return.
-          To get this subtrack 10 from packet length
+          To get length of this subtract 10 from packet length
     */
 
     // extracts 64 bit address that starts at index 4 in packet
