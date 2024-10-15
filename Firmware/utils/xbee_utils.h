@@ -7,6 +7,7 @@
 #define TRANSMIT_REQUEST 0x10
 
 void ConfigurePacket(uint8_t* packet, int packet_length) {
+    /* Configures bytes common to all XBEE TX packets*/
 
     // set start byte
     packet[0] = START_DELIMITER;
