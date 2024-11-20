@@ -1,0 +1,8 @@
+../Core/Src/main.c:65:6:tick_on_button2	2
+../Core/Src/main.c:73:6:tick_on_button3	2
+../Core/Src/main.c:88:5:main	1
+../Core/Src/main.c:136:6:SystemClock_Config	3
+../Core/Src/main.c:183:13:MX_USART1_UART_Init	2
+../Core/Src/main.c:216:13:MX_USART2_UART_Init	2
+../Core/Src/main.c:249:13:MX_GPIO_Init	1
+../Core/Src/main.c:295:6:Error_Handler	1
