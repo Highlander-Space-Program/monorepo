@@ -1,8 +1,8 @@
 ../Core/Src/main.c:62:6:tick_on_button	4
-../Core/Src/main.c:85:6:tick_off_button	4
-../Core/Src/main.c:113:5:main	1
-../Core/Src/main.c:161:6:SystemClock_Config	3
-../Core/Src/main.c:208:13:MX_USART1_UART_Init	2
-../Core/Src/main.c:241:13:MX_USART2_UART_Init	2
-../Core/Src/main.c:274:13:MX_GPIO_Init	1
-../Core/Src/main.c:320:6:Error_Handler	1
+../Core/Src/main.c:87:6:tick_off_button	4
+../Core/Src/main.c:117:5:main	1
+../Core/Src/main.c:166:6:SystemClock_Config	3
+../Core/Src/main.c:213:13:MX_USART1_UART_Init	2
+../Core/Src/main.c:246:13:MX_USART2_UART_Init	2
+../Core/Src/main.c:279:13:MX_GPIO_Init	1
+../Core/Src/main.c:325:6:Error_Handler	1

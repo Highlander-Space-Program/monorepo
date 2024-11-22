@@ -39,13 +39,13 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  17 .debug_line   00007972  00000000  00000000  00021798  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    000813bf  00000000  00000000  0002910a  2**0
+ 18 .debug_str    000813d0  00000000  00000000  0002910a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000043  00000000  00000000  000aa4c9  2**0
+ 19 .comment      00000043  00000000  00000000  000aa4da  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  000018a0  00000000  00000000  000aa50c  2**2
+ 20 .debug_frame  000018a0  00000000  00000000  000aa520  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 0000006e  00000000  00000000  000abdac  2**0
+ 21 .debug_line_str 0000007f  00000000  00000000  000abdc0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -354,6 +354,8 @@ void tick_on_button() {
  80004c4:	b580      	push	{r7, lr}
  80004c6:	b082      	sub	sp, #8
  80004c8:	af00      	add	r7, sp, #0
+	/* If on button was just pressed, send the on command
+	 * and flash light.  Else do nothing and turn light off */
 	bool curr_switch_status = HAL_GPIO_ReadPin(
  80004ca:	2108      	movs	r1, #8
  80004cc:	4822      	ldr	r0, [pc, #136]	@ (8000558 <tick_on_button+0x94>)
@@ -449,6 +451,8 @@ void tick_off_button() {
  8000568:	b580      	push	{r7, lr}
  800056a:	b082      	sub	sp, #8
  800056c:	af00      	add	r7, sp, #0
+	/* If off button was just pressed, send the off command
+	 * and flash light.  Else do nothing and turn light off */
 	bool curr_switch_status = HAL_GPIO_ReadPin(
  800056e:	2104      	movs	r1, #4
  8000570:	4822      	ldr	r0, [pc, #136]	@ (80005fc <tick_off_button+0x94>)
@@ -572,11 +576,11 @@ int main(void)
  800061c:	f000 f89e 	bl	800075c <MX_USART2_UART_Init>
   MX_USART1_UART_Init();
  8000620:	f000 f872 	bl	8000708 <MX_USART1_UART_Init>
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  // Call tick functions for each button
 	  tick_on_button();
  8000624:	f7ff ff4e 	bl	80004c4 <tick_on_button>
 	  tick_off_button();
