@@ -279,6 +279,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   {
     Error_Handler();
   }
+  uint8_t relay_buf[10];
+  uint16_t rx_id = RxHeader.StdId;
+  relay_buf[0] = rx_id >> 8;
+  relay_buf[1] = rx_id & 0xFF;
+  memcpy(&relay_buf[2], RxData, 8);
+  HAL_UART_Transmit(&huart2, relay_buf, 10, 10);
 }
 
 void Parse_Config_Command() {
