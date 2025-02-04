@@ -1,1 +1,32 @@
-.DS_Store
+# STM32CubeIDE workspace metadata (DO NOT track)
+.metadata/
+.settings/
+.stm32cubemx/
+.metadata/
+
+# Build files (clean build system)
+Debug/
+Release/
+*.o
+*.elf
+*.bin
+*.map
+*.dep
+*.lst
+*.axf
+*.hex
+
+# CubeMX auto-generated files (optional)
+*.ioc
+
+# Log files
+*.log
+
+# IDE-specific files
+*.bak
+*.tmp
+*.swp
+*.swo
+*.launch
+
+.DS_store
