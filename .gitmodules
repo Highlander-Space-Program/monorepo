@@ -1,6 +1,0 @@
-[submodule "Firmware/ServoControllerFirmware"]
-	path = Firmware/ServoControllerFirmware
-	url = git@github.com:Highlander-Space-Program/ServoControllerFirmware.git
-[submodule "Firmware/SensorControllerFirmware"]
-	path = Firmware/SensorControllerFirmware
-	url = git@github.com:Highlander-Space-Program/SensorControllerFirmware.git
