@@ -16,9 +16,6 @@ Release/
 *.axf
 *.hex
 
-# CubeMX auto-generated files (optional)
-*.ioc
-
 # Log files
 *.log
 
@@ -27,6 +24,5 @@ Release/
 *.tmp
 *.swp
 *.swo
-*.launch
 
 .DS_store
