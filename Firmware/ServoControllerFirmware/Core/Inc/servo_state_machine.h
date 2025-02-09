@@ -127,21 +127,17 @@ void Tick_SERVO (uint8_t cmd, Servo* servo) {
 	switch (servo->state) {
 		case ON_CLOSED:
 			Turn_On_Servo ();
-			STATUS_IND_On ();
 			Actuate_Servo (servo->servo_config->closed_deg, servo->timer);
 			break;
 		case OFF_CLOSED:
 			Turn_Off_Servo ();
-			STATUS_IND_Off ();
 			break;
 		case ON_OPEN:
 			Turn_On_Servo ();
-			STATUS_IND_On ();
 			Actuate_Servo (servo->servo_config->open_deg, servo->timer);
 			break;
 		case OFF_OPEN:
 			Turn_Off_Servo ();
-			STATUS_IND_Off ();
 			break;
 	}
 }

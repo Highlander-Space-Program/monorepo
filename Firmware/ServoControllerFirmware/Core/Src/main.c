@@ -59,7 +59,7 @@ TIM_HandleTypeDef htim14;
 TIM_HandleTypeDef htim16;
 
 /* USER CODE BEGIN PV */
-uint32_t adc_val = 0;
+static volatile uint32_t adc_val = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -94,14 +94,6 @@ void TestServo (Servo* servo) {
 	Tick_SERVO(CLOSE_SERVO, servo);
 	HAL_Delay(1000);
 
-	// LED STAYS ON, SERVO STAYS CLOSED
-	Tick_SERVO(CHECK_SERVO, servo);
-    HAL_Delay(10000); // wait 15 seconds
-
-    // LED TURNS OFF, SERVO STAYS CLOSED
-	Tick_SERVO(CHECK_SERVO, servo);
-	HAL_Delay(1000);
-
 	// LED TURNS ON, SERVO GOES TO OPEN ANGLE
 	Tick_SERVO(OPEN_SERVO, servo);
 	HAL_Delay(1000); // wait 15 seconds
@@ -112,20 +104,35 @@ void TestServo (Servo* servo) {
   }
 }
 
-void TestHeater() {
+void TestHeater(Heater* heater) {
 
+	while (1) {
 	// TURNS HEATER ON
-	Tick_Heater (H_ON);
-	HAL_Delay(2000);
+		Tick_HEATER (H_ON, heater);
+		HAL_Delay(5000);
 
-	// TURNS HEATER OFF
-	Tick_Heater (H_OFF );
-	HAL_Delay(2000);
 
-//	while (1) {
-//		// AUTO HEATER
-//		Tick_Heater (H_AUTO);
-//	}
+		// TURNS HEATER OFF
+		Tick_HEATER (H_OFF, heater);
+		HAL_Delay(5000);
+	}
+}
+
+void TestThermocouple (Thermocouple* thermo){
+	while (1) {
+		Tick_THERMO(-1, thermo);
+		double temp = thermo->temperature;
+		HAL_Delay(200);
+	}
+}
+
+void TestHeaterAuto (Heater* heater, Thermocouple* thermo) {
+
+	while (1) {
+	// TURNS HEATER ON
+		Tick_THERMO (-1, thermo);
+		Tick_HEATER (H_AUTO, heater);
+	}
 }
 
 void TestServoAndHeater() {
@@ -169,8 +176,6 @@ int main(void)
   MX_TIM16_Init();
   MX_TIM2_Init();
   MX_ADC_Init();
-
-
   /* USER CODE BEGIN 2 */
   CAN_FilterTypeDef filter;
   filter.FilterMaskIdHigh = 0x0;
@@ -183,11 +188,13 @@ int main(void)
   if (HAL_CAN_ConfigFilter(&hcan, &filter) != HAL_OK) {
       Error_Handler();
   }
-  HAL_ADCEx_Calibration_Start(&hadc);
-  HAL_ADC_Start_DMA(&hadc,(uint32_t*)&adc_val,1);
-//  if (HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING)) {
-//    Error_Handler();
-//  };
+//  HAL_ADCEx_Calibration_Start(&hadc);
+//  HAL_ADC_Start_DMA(&hadc,(uint32_t*)&adc_val,1);
+//  double heater_temp = Get_Temperature(adc_val);
+
+  if (HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING)) {
+    Error_Handler();
+  };
 
   if (HAL_CAN_Start(&hcan) != HAL_OK) {
       Error_Handler();
@@ -207,7 +214,7 @@ int main(void)
   uid[1] = HAL_GetUIDw1();
   uid[2] = HAL_GetUIDw2();
   Servo* servo = construct_servo (uid, &htim2);
-  Thermocouple* thermo = construct_thermo(uid, &hadc);
+  Thermocouple* thermo = construct_thermo(uid, &hadc, &adc_val);
   Heater* heater = construct_heater (uid, thermo);
 
   if (!servo) {
@@ -225,32 +232,40 @@ int main(void)
   // struct Thermocouple* thermo = construct_thermo (uid);
   // ** COMMENT OUT IF NOT TESTING COMPONENTS ** //
 
-  // ** TESTING SERVO ** //
-  TestServo (servo);
-  // ** TESTING SERVO ** //
 
-  // ** TESTING HEATER ** //
-  // TestHeater ();
+
+  // ** TESTING FUNCTIONS AT TOP OF FILE ** //
+//  TestServo (servo);
+//  TestHeater (heater);
+
+//  TestThermocouple (thermo);
+//  TestHeaterAuto (heater, thermo);
   // ** TESTING
 
 
   // will run through a set of test commands to see if everything works then repeat
+  uint32_t last_toggle_time = 0;
+  SERVO_CMD servo_cmd = CLOSE_SERVO;
+  THERMO_CMD thermo_cmd = -1;
+  HEATER_CMD heater_cmd = H_AUTO;
   while (1)
   {
-    /* USER CODE END WHILE */
-
-
 	// will need to read CAN here
 
-	uint8_t servo_cmd = -1;
-	uint8_t thermo_cmd = -1;
-	uint8_t heater_cmd = -1;
-    // now do the stuff
+
+	if (HAL_GetTick() - last_toggle_time >= 1000) {
+        last_toggle_time = HAL_GetTick();
+        servo_cmd = (servo_cmd == OPEN_SERVO) ? CLOSE_SERVO : OPEN_SERVO;
+    }
+
+	// now do the stuff
 	Tick_SERVO(servo_cmd, servo);
 	Tick_THERMO(thermo_cmd, thermo);
 	Tick_HEATER(heater_cmd, heater);
-    /* USER CODE BEGIN 3 */
   }
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
 }
 
@@ -569,7 +584,23 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+    CAN_RxHeaderTypeDef RxHeader;
+    uint8_t RxData[8];  // Max CAN data length = 8 bytes
 
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK)
+    {
+        // Print CAN Message
+        printf("Received CAN ID: 0x%X, DLC: %d, Data: ", RxHeader.StdId, RxHeader.DLC);
+        for (int i = 0; i < RxHeader.DLC; i++)
+        {
+            printf("%02X ", RxData[i]);
+        }
+        printf("\n");
+        STATUS_IND_On();
+    }
+}
 
 /* USER CODE END 4 */
 

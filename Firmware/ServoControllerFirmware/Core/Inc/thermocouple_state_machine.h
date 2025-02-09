@@ -26,7 +26,7 @@ typedef struct {
   THERMO_STATE state;
   ADC_HandleTypeDef* adc;
   double temperature;
-  uint32_t adc_val;
+  uint32_t* adc_val;
   uint32_t last_tick_update; // Use HAL_GetTick() for tracking time
 } Thermocouple;
 
@@ -46,7 +46,16 @@ struct Thermocouple* construct_thermocouple (const uint32_t board_uid[3]);
   *
   * @retval Thermocouple* returns a pointer to the constructed thermo.
   */
-Thermocouple* construct_thermo (const uint32_t board_uid[3], ADC_HandleTypeDef* adc) {
+Thermocouple* construct_thermo (const uint32_t board_uid[3], ADC_HandleTypeDef *adc, uint32_t* adc_val) {
+
+
+//    HAL_ADCEx_Calibration_Start(adc);
+//	HAL_ADC_Start_DMA(adc, (uint32_t*)(&(adc_val)),1);
+//    double heater_temp = Get_Temperature(adc_val);
+//
+//
+
+
     ThermoConfig *tc = GET_THERMO_CONFIG((uint32_t *)board_uid);
     if (!tc) {
         return NULL;
@@ -62,10 +71,11 @@ Thermocouple* construct_thermo (const uint32_t board_uid[3], ADC_HandleTypeDef* 
     thermo->state            = TEMP_WAIT;
     thermo->last_tick_update = HAL_GetTick();
     thermo->adc 			 = adc;
+    thermo->adc_val 		 = adc_val;
 
     HAL_ADCEx_Calibration_Start(thermo->adc);
-	HAL_ADC_Start_DMA(thermo->adc,(uint32_t*)thermo->adc_val,1);
-	thermo->temperature = DBL_MAX;
+	HAL_ADC_Start_DMA(thermo->adc, thermo->adc_val,1);
+	thermo->temperature = Get_Temperature(*(thermo->adc_val));
 
     return thermo;
 }
@@ -93,9 +103,8 @@ void Tick_THERMO (uint8_t cmd, Thermocouple* thermo) {
 		case TEMP_GET:
 	        thermo->last_tick_update = HAL_GetTick();
 
-	    	HAL_ADC_Start_DMA(thermo->adc,(uint32_t*)thermo->adc_val,1);
-
-			thermo->temperature = Get_Temperature(thermo->adc_val);
+	    	HAL_ADC_Start_DMA(thermo->adc, thermo->adc_val,1);
+	    	thermo->temperature = Get_Temperature(*(thermo->adc_val));
 			break;
 	}
 }

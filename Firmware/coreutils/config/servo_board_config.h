@@ -40,22 +40,22 @@ typedef struct {
 	uint16_t frequency;
 } HeaterConfig;
 
-// defaults to as fast as possible
+// UID, NAME, OPEN_ANGLE, CLOSED_ANGLE, UPDATE_FREQUENCY
 ServoConfig servo_lookup_table[] = {
 	{{0x0039002c, 0x48585314, 0x20373733}, "FV-N02", 0, 45, -1},
 	{{0x0032002D, 0x48585314, 0x20373733}, "FV-N03", 0, 135, -1}
 };
 
-// defaults to 100hz
+// UID, NAME, UPDATE_FREQUENCY
 ThermoConfig thermo_lookup_table[] = {
     {{0x39002c, 0x48585314, 0x20373733}, "TC-02", 100},
     {{0x0032002D, 0x48585314, 0x20373733}, "TC-03", 100}
 };
 
-// defaults to 100hz
+// UID, NAME, HIGHEST_TEMP, LOWEST_TEMP, UPDATE_FREQUENCY
 HeaterConfig heater_lookup_table[] = {
 	{{0x39002c, 0x48585314, 0x20373733}, "H-02", 30, 25, 100},
-	{{0x0032002D, 0x48585314, 0x20373733}, "H-03", 30, 25, 100}
+	{{0x0032002D, 0x48585314, 0x20373733}, "H-03", 29, 27, 100}
 };
 
 

@@ -13,10 +13,12 @@
 
 void Heater_On() {
 	HAL_GPIO_WritePin(HEATER_EN_GPIO_Port, HEATER_EN_Pin, GPIO_PIN_SET);
+	STATUS_IND_On();
 }
 
 void Heater_Off() {
 	HAL_GPIO_WritePin(HEATER_EN_GPIO_Port, HEATER_EN_Pin, GPIO_PIN_RESET);
+	STATUS_IND_Off();
 }
 
 #endif /* INC_HEATER_UTILS_H_ */

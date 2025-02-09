@@ -27,8 +27,8 @@ typedef enum {
 
 //commands for the heater
 typedef enum  {
-  H_ON = 0,
-  H_OFF = 1,
+  H_OFF = 0,
+  H_ON = 1,
   H_AUTO = 2
 } HEATER_CMD;
 
