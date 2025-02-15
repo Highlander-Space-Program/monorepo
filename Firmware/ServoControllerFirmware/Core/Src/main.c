@@ -188,9 +188,9 @@ int main(void)
   if (HAL_CAN_ConfigFilter(&hcan, &filter) != HAL_OK) {
       Error_Handler();
   }
-//  HAL_ADCEx_Calibration_Start(&hadc);
-//  HAL_ADC_Start_DMA(&hadc,(uint32_t*)&adc_val,1);
-//  double heater_temp = Get_Temperature(adc_val);
+  HAL_ADCEx_Calibration_Start(&hadc);
+  HAL_ADC_Start_DMA(&hadc,(uint32_t*)&adc_val,1);
+  double heater_temp = Get_Temperature(adc_val);
 
   if (HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING)) {
     Error_Handler();
