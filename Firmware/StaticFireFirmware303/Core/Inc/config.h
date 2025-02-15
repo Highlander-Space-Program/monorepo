@@ -95,11 +95,11 @@ uint8_t ack = 0x00;
 #define NO2_CLOSED_DEG 86
 
 struct Servo servos[] = {
-        {"NO6", &htim1, &TIM16->CCR1}, // used to be n2
-        {"EO1", &htim1, &TIM1->CCR3}, // used to be etoh
-        {"NO4", &htim17, &TIM17->CCR1}, // used to be nos1
-        {"NO2", &htim16, &TIM1->CCR1}, // used to be nos2
-		{"NO3", &htim1, &TIM1->CCR2}  // new one
+        {"NO6", &htim16, &TIM16->CCR1},
+        {"EO1", &htim1, &TIM1->CCR1},
+        {"NO4", &htim1, &TIM1->CCR4},
+        {"NO2", &htim3, &TIM3->CCR1},
+		{"NO3", &htim2, &TIM2->CCR2}
 };
 
 enum IGNITER_STATE {IGNITER_INIT, IGNITER_DEACTIVATED, IGNITER_ACTIVATED} igniterState = IGNITER_INIT;

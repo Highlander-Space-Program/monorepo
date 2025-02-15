@@ -1,0 +1,10 @@
+03:32:35 **** Incremental Build of configuration Debug for project ServoControllerFirmware ****
+make -j11 all 
+arm-none-eabi-size  ServoControllerFirmware.elf 
+   text	   data	    bss	    dec	    hex	filename
+  27520	    256	   3832	  31608	   7b78	ServoControllerFirmware.elf
+Finished building: default.size.stdout
+ 
+
+03:32:35 Build Finished. 0 errors, 0 warnings. (took 237ms)
+

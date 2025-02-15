@@ -60,8 +60,8 @@ all: main-build
 main-build: StaticFireFirmware303.elf secondary-outputs
 
 # Tool invocations
-StaticFireFirmware303.elf StaticFireFirmware303.map: $(OBJS) $(USER_OBJS) C:\Users\zande\Desktop\HSP\StaticFireFirmware303\STM32F303K8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "StaticFireFirmware303.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\zande\Desktop\HSP\StaticFireFirmware303\STM32F303K8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="StaticFireFirmware303.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+StaticFireFirmware303.elf StaticFireFirmware303.map: $(OBJS) $(USER_OBJS) /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/StaticFireFirmware303/STM32F303K8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "StaticFireFirmware303.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/StaticFireFirmware303/STM32F303K8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="StaticFireFirmware303.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

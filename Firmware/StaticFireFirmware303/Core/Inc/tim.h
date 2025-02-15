@@ -11,7 +11,8 @@
 #define INC_TIM_H_
 
 extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim16;
-extern TIM_HandleTypeDef htim17;
 
 #endif /* INC_TIM_H_ */
