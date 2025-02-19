@@ -28,7 +28,7 @@ void Tick_Igniter(uint8_t cmd) {
 		break;
 
 		case IGNITER_ACTIVATED:
-		if (((cmd == DEACTIVATE_IGNITER || cmd == CLOSE_ALL || isCloseAll)  && !isStarted) || cmd == ABORT) {
+		if (((cmd == DEACTIVATE_IGNITER)  && !isStarted) || cmd == ABORT) {
 			igniterState = IGNITER_DEACTIVATED;
 		}
 		else {

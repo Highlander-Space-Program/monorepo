@@ -12,6 +12,7 @@
 #include "deg_to_ccr.h"
 #include "create_ack.h"
 #include "main.h"
+#include "breakwire.h"
 
 void Tick_EO1 (uint8_t cmd, struct Servo *servo) {
 	uint64_t curr_ticks = HAL_GetTick();
@@ -23,7 +24,11 @@ void Tick_EO1 (uint8_t cmd, struct Servo *servo) {
 		break;
 
 		case SERVO_CLOSED_OFF:
-		if (cmd == CLOSE_EO1) {
+		if (isAutoArmed && Check_Breakwire() == GPIO_PIN_RESET) {
+			eo1_on_time = HAL_GetTick();
+			eo1State = SERVO_OPENED_ON;
+		}
+		else if (cmd == CLOSE_EO1) {
 			eo1_on_time = HAL_GetTick();
 			eo1State = SERVO_CLOSED_ON;
 		}
@@ -34,7 +39,11 @@ void Tick_EO1 (uint8_t cmd, struct Servo *servo) {
 		break;
 
 		case SERVO_CLOSED_ON:
-		if (cmd == OPEN_EO1 || cmd == START_1) {
+		if (isAutoArmed && Check_Breakwire() == GPIO_PIN_RESET) {
+			eo1_on_time = HAL_GetTick();
+			eo1State = SERVO_OPENED_ON;
+		}
+		else if (cmd == OPEN_EO1 || cmd == START_1) {
 			eo1_on_time = HAL_GetTick();
 			eo1State = SERVO_OPENED_ON;
 		}

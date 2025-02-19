@@ -31,8 +31,9 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Core/Inc/tim.h ../Core/Inc/main.h ../Core/Inc/config.h \
  ../Core/Inc/tim.h ../Core/Inc/deg_to_ccr.h ../Core/Inc/config.h \
  ../Core/Inc/eo1.h ../Core/Inc/deg_to_ccr.h ../Core/Inc/create_ack.h \
- ../Core/Inc/no6.h ../Core/Inc/no4.h ../Core/Inc/no3.h ../Core/Inc/no2.h \
- ../Core/Inc/create_ack.h ../Core/Inc/igniter.h ../Core/Inc/servo.h
+ ../Core/Inc/breakwire.h ../Core/Inc/no6.h ../Core/Inc/no4.h \
+ ../Core/Inc/no3.h ../Core/Inc/no2.h ../Core/Inc/create_ack.h \
+ ../Core/Inc/igniter.h ../Core/Inc/servo.h ../Core/Inc/breakwire.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal.h:
 ../Core/Inc/stm32f3xx_hal_conf.h:
@@ -72,6 +73,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/eo1.h:
 ../Core/Inc/deg_to_ccr.h:
 ../Core/Inc/create_ack.h:
+../Core/Inc/breakwire.h:
 ../Core/Inc/no6.h:
 ../Core/Inc/no4.h:
 ../Core/Inc/no3.h:
@@ -79,3 +81,4 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/create_ack.h:
 ../Core/Inc/igniter.h:
 ../Core/Inc/servo.h:
+../Core/Inc/breakwire.h:

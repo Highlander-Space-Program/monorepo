@@ -46,8 +46,8 @@ enum COMMANDS {
   START_1 = 8,
   OPEN_NO2 = 9,
   CLOSE_NO2 = 10,
-  CLOSE_ALL = 12,
-  DECLOSE_ALL = 13,
+  AUTO_ON = 12,
+  AUTO_OFF = 13,
   ACTIVATE_IGNITER = 14,
   DEACTIVATE_IGNITER = 15,
   ABORT = 16,
@@ -71,6 +71,7 @@ bool isCloseAll = false;
 bool isAborted = false;
 bool isServoEnabled = false;
 bool isStarted = false;
+bool isAutoArmed = false;
 uint8_t ack = 0x00;
 
 #define HSP_SERVO_MIN_PULSE_WIDTH 500
@@ -93,6 +94,8 @@ uint8_t ack = 0x00;
 
 #define NO2_OPENED_DEG 0
 #define NO2_CLOSED_DEG 86
+#define SERVO_ON_TIME_MS 3000
+#define LED_FLASH_TIME_MS 500
 
 struct Servo servos[] = {
         {"NO6", &htim16, &TIM16->CCR1},
@@ -116,6 +119,6 @@ uint64_t no6_on_time = 0;
 uint64_t eo1_on_time = 0;
 uint8_t rx_buff[1];
 uint8_t tx_buff[1];
-#define SERVO_ON_TIME_MS 3000
+
 
 #endif /* INC_CONFIG_H_ */
