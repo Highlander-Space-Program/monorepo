@@ -1237,7 +1237,7 @@ void Tick_EO1 (uint8_t cmd, struct Servo *servo) {
  8000d30:	689c      	ldr	r4, [r3, #8]
  8000d32:	22b4      	movs	r2, #180	@ 0xb4
  8000d34:	6ab9      	ldr	r1, [r7, #40]	@ 0x28
- 8000d36:	205a      	movs	r0, #90	@ 0x5a
+ 8000d36:	2059      	movs	r0, #89	@ 0x59
  8000d38:	f7ff fe36 	bl	80009a8 <Deg_To_CCR>
  8000d3c:	4603      	mov	r3, r0
  8000d3e:	6023      	str	r3, [r4, #0]
@@ -1550,7 +1550,7 @@ void Tick_NO6 (uint8_t cmd, struct Servo *servo) {
  8000f58:	689c      	ldr	r4, [r3, #8]
  8000f5a:	22b4      	movs	r2, #180	@ 0xb4
  8000f5c:	6ab9      	ldr	r1, [r7, #40]	@ 0x28
- 8000f5e:	205a      	movs	r0, #90	@ 0x5a
+ 8000f5e:	2056      	movs	r0, #86	@ 0x56
  8000f60:	f7ff fd22 	bl	80009a8 <Deg_To_CCR>
  8000f64:	4603      	mov	r3, r0
  8000f66:	6023      	str	r3, [r4, #0]

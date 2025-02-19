@@ -80,10 +80,10 @@ uint8_t ack = 0x00;
 #define HSP_NO3_SERVO_MAX_DEG 270
 
 #define EO1_OPENED_DEG 0
-#define EO1_CLOSED_DEG 90
+#define EO1_CLOSED_DEG 89
 
 #define NO6_OPENED_DEG 0
-#define NO6_CLOSED_DEG 90
+#define NO6_CLOSED_DEG 86
 
 #define NO4_OPENED_DEG 8
 #define NO4_CLOSED_DEG 92
