@@ -60,8 +60,8 @@ all: main-build
 main-build: f401re-receiver.elf secondary-outputs
 
 # Tool invocations
-f401re-receiver.elf f401re-receiver.map: $(OBJS) $(USER_OBJS) /Users/justinfababier/STM32CubeIDE/HSP-F401RE/f401re-receiver/STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "f401re-receiver.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/justinfababier/STM32CubeIDE/HSP-F401RE/f401re-receiver/STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="f401re-receiver.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+f401re-receiver.elf f401re-receiver.map: $(OBJS) $(USER_OBJS) C:\Users\zande\Desktop\HSP\monorepo\Firmware\new-member-projects\Justin_F\f401re-receiver\STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "f401re-receiver.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\zande\Desktop\HSP\monorepo\Firmware\new-member-projects\Justin_F\f401re-receiver\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="f401re-receiver.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

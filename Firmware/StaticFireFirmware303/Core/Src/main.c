@@ -553,21 +553,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(BRK_CONT_LED_GPIO_Port, BRK_CONT_LED_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, NO2_EN_Pin|NO3_EN_Pin|NO4_EN_Pin|NO6_EN_Pin
                           |EO1_EN_Pin|IGNITER_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SERVO_EN_GPIO_Port, SERVO_EN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, BRK_CONT_LED_Pin|SERVO_EN_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : BRK_CONT_LED_Pin */
-  GPIO_InitStruct.Pin = BRK_CONT_LED_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(BRK_CONT_LED_GPIO_Port, &GPIO_InitStruct);
+  /*Configure GPIO pin : BRK_CONT_Pin */
+  GPIO_InitStruct.Pin = BRK_CONT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(BRK_CONT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : NO2_EN_Pin NO3_EN_Pin NO4_EN_Pin NO6_EN_Pin
                            EO1_EN_Pin IGNITER_Pin */
@@ -578,18 +574,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : BRK_CONT_Pin */
-  GPIO_InitStruct.Pin = BRK_CONT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(BRK_CONT_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : SERVO_EN_Pin */
-  GPIO_InitStruct.Pin = SERVO_EN_Pin;
+  /*Configure GPIO pins : BRK_CONT_LED_Pin SERVO_EN_Pin */
+  GPIO_InitStruct.Pin = BRK_CONT_LED_Pin|SERVO_EN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(SERVO_EN_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
