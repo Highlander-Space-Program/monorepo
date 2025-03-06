@@ -40,11 +40,11 @@ typedef struct  {
   uint32_t last_tick_update;
 } Heater;
 
-Heater* construct_heater (const uint32_t board_uid[3], Thermocouple* thermo);
+Heater* construct_heater (const uint32_t can_id, Thermocouple* thermo);
 void Tick_HEATER (uint8_t cmd, Heater* heater);
 
-Heater* construct_heater (const uint32_t board_uid[3], Thermocouple* thermo) {
-    HeaterConfig *hc = GET_HEATER_CONFIG((uint32_t *)board_uid);
+Heater* construct_heater (const uint32_t can_id, Thermocouple* thermo) {
+    HeaterConfig *hc = GET_HEATER_CONFIG(can_id);
     if (!hc) {
         return NULL;
     }

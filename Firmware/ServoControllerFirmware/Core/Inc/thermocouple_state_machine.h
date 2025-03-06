@@ -34,7 +34,7 @@ typedef struct {
 
 //Function Prototypes
 void Tick_THERMO (uint8_t cmd, Thermocouple* thermo);
-struct Thermocouple* construct_thermocouple (const uint32_t board_uid[3]);
+Thermocouple* construct_thermo (const uint32_t can_id, ADC_HandleTypeDef *adc, volatile uint32_t* adc_val);
 
 /**
   * @brief  The construct_thermo function is used to create a thermocouple.
@@ -46,17 +46,8 @@ struct Thermocouple* construct_thermocouple (const uint32_t board_uid[3]);
   *
   * @retval Thermocouple* returns a pointer to the constructed thermo.
   */
-Thermocouple* construct_thermo (const uint32_t board_uid[3], ADC_HandleTypeDef *adc, uint32_t* adc_val) {
-
-
-//    HAL_ADCEx_Calibration_Start(adc);
-//	HAL_ADC_Start_DMA(adc, (uint32_t*)(&(adc_val)),1);
-//    double heater_temp = Get_Temperature(adc_val);
-//
-//
-
-
-    ThermoConfig *tc = GET_THERMO_CONFIG((uint32_t *)board_uid);
+Thermocouple* construct_thermo (const uint32_t can_id, ADC_HandleTypeDef *adc, volatile uint32_t* adc_val) {
+    ThermoConfig *tc = GET_THERMO_CONFIG(can_id);
     if (!tc) {
         return NULL;
     }
