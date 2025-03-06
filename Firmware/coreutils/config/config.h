@@ -9,7 +9,7 @@
 #define INC_CONFIG_H_
 
 #include "sensor_board_config.h"
-#include "servo_board_config.h"
+#include "components.h"
 #include "pad_config.h"
 #include "flight_config.h"
 

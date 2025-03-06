@@ -1,44 +1,19 @@
 /*
- * servo_config.h
+ * components.h
  *
- *  Created on: Jan 30, 2025
- *      Author: brandonmarcus
+ *  Created on: Mar 5, 2025
+ *      Author: zande
  */
 
-/*
- * The ServoInfo provides information
- */
+#ifndef INC_COREUTILS_CONFIG_COMPONENTS_H_
+#define INC_COREUTILS_CONFIG_COMPONENTS_H_
 
-#ifndef INC_COREUTILS_CONFIG_SERVO_BOARD_CONFIG_H_
-#define INC_COREUTILS_CONFIG_SERVO_BOARD_CONFIG_H_
 
 #include <string.h>
 
-struct Servo;
-struct Thermocouple;
-struct Heater;
-
-typedef struct {
-	uint32_t uid[3];
-	char* pnid;
-	int closed_deg;
-	int open_deg;
-	uint16_t frequency;
-} ServoConfig;
-
-typedef struct {
-    uint32_t uid[3];
-    char* pnid;
-    uint16_t frequency;
-} ThermoConfig;
-
-typedef struct {
-	uint32_t uid[3];
-	char* pnid;
-	int off_temp;
-	int on_temp;
-	uint16_t frequency;
-} HeaterConfig;
+#include "servo_config.h"
+#include "thermo_config.h"
+#include "heater_config.h"
 
 // UID, NAME, OPEN_ANGLE, CLOSED_ANGLE, UPDATE_FREQUENCY
 ServoConfig servo_lookup_table[] = {
@@ -58,11 +33,6 @@ HeaterConfig heater_lookup_table[] = {
 	{{0x0032002D, 0x48585314, 0x20373733}, "H-03", 29, 27, 100}
 };
 
-
-ServoConfig* GET_SERVO_CONFIGS() {
-	return servo_lookup_table;
-}
-
 ServoConfig* GET_SERVO_CONFIG(uint32_t* uid) {
     for (int i = 0; i < sizeof(servo_lookup_table) / sizeof(servo_lookup_table[0]); i++) {
         if (memcmp(uid, servo_lookup_table[i].uid, sizeof(servo_lookup_table[i].uid)) == 0) {
@@ -70,6 +40,10 @@ ServoConfig* GET_SERVO_CONFIG(uint32_t* uid) {
         }
     }
     return NULL; // Return NULL if no match is found
+}
+
+ServoConfig* GET_SERVO_CONFIGS() {
+	return servo_lookup_table;
 }
 
 ThermoConfig* GET_THERMO_CONFIGS() {
@@ -99,4 +73,4 @@ HeaterConfig* GET_HEATER_CONFIG(uint32_t* uid) {
 }
 
 
-#endif /* INC_COREUTILS_CONFIG_SERVO_BOARD_CONFIG_H_ */
+#endif /* INC_COREUTILS_CONFIG_COMPONENTS_H_ */
