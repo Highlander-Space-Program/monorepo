@@ -22,10 +22,10 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdbool.h"
-#include "can_utils.h"
 #include "servo_utils.h"
 #include "config/config.h"
 #include "utils/board_utils.h"
+#include "utils/can_utils.h"
 //#include "heater_utils.h"
 
 #include "servo_state_machine.h"
@@ -58,8 +58,19 @@ TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim14;
 TIM_HandleTypeDef htim16;
 
+// This allows multiple commands to be sent in a row without any potential issues with interrupts occurring over each other.
+volatile SERVO_CMD servo_cmd = CLOSE_SERVO;
+volatile uint8_t servo_instance = -1;
+volatile THERMO_CMD thermo_cmd = TEMP_WAIT;
+volatile uint8_t thermo_instance = -1;
+volatile HEATER_CMD heater_cmd = H_OFF;
+volatile uint8_t heater_instance = -1;
+volatile bool new_command_received = 0;
 /* USER CODE BEGIN PV */
 static volatile uint32_t adc_val = 0;
+
+uint32_t board_uid[3];
+static uint8_t short_board_id;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -176,21 +187,64 @@ int main(void)
   MX_TIM16_Init();
   MX_TIM2_Init();
   MX_ADC_Init();
-  /* USER CODE BEGIN 2 */
+
+/* USER CODE BEGIN 2 */
+  GET_BOARD_UID (board_uid);
+  short_board_id = GET_SHORT_BOARD_ID (board_uid);
+
+  // Configure filter for extended ID
   CAN_FilterTypeDef filter;
-  filter.FilterMaskIdHigh = 0x0;
-  filter.FilterMaskIdLow = 0x0;
-  filter.FilterMode = CAN_FILTERMODE_IDMASK;
-  filter.FilterBank = 0;
-  filter.FilterScale = CAN_FILTERSCALE_32BIT;
-  filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
   filter.FilterActivation = CAN_FILTER_ENABLE;
+  filter.FilterBank = 0;
+  filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  filter.FilterMode = CAN_FILTERMODE_IDMASK;
+  filter.FilterScale = CAN_FILTERSCALE_32BIT;
+
+  // Page 1091 in STM32F405 Reference Manual
+  // first 29 are the identifier, then IDE, then RTR, then 0
+
+  // we only care about the 8 bits to make sure that its talking to the right board, so we use that
+  uint32_t canIdFilter = (short_board_id << 16);
+  uint32_t canIdMask = 0x00FF0000;
+
+  // Set IDE bit in both filter and mask
+  canIdFilter |= CAN_ID_EXT;
+  canIdFilter |= CAN_RTR_DATA;
+  canIdMask |= CAN_ID_EXT;
+  canIdMask |= CAN_RTR_DATA;
+
+  filter.FilterIdHigh = (canIdFilter >> 16) & 0xFFFF;
+  filter.FilterIdLow = canIdFilter & 0xFFFF;
+  filter.FilterMaskIdHigh = (canIdMask >> 16) & 0xFFFF;
+  filter.FilterMaskIdLow = canIdMask & 0xFFFF;
+
+
+
+//  CAN_FilterTypeDef filter;
+//
+//  // Configure filter to accept all extended IDs
+//  filter.FilterActivation = CAN_FILTER_ENABLE;
+//  filter.FilterBank = 0;
+//  filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+//  filter.FilterMode = CAN_FILTERMODE_IDMASK;
+//  filter.FilterScale = CAN_FILTERSCALE_32BIT;
+//
+//  // Set IDE bit in filter ID (to match extended IDs)
+//  filter.FilterIdHigh = 0x0000;
+//  filter.FilterIdLow = CAN_ID_EXT & 0xFFFF;
+//  // Only require IDE bit match, mask everything else to 0
+//  filter.FilterMaskIdHigh = 0x0000;
+//  filter.FilterMaskIdLow = CAN_ID_EXT & 0xFFFF;
+
+
+
+
+
   if (HAL_CAN_ConfigFilter(&hcan, &filter) != HAL_OK) {
       Error_Handler();
   }
   HAL_ADCEx_Calibration_Start(&hadc);
   HAL_ADC_Start_DMA(&hadc,(uint32_t*)&adc_val,1);
-  double heater_temp = Get_Temperature(adc_val);
 
   if (HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING)) {
     Error_Handler();
@@ -199,6 +253,10 @@ int main(void)
   if (HAL_CAN_Start(&hcan) != HAL_OK) {
       Error_Handler();
   }
+
+  STATUS_IND_Toggle();
+  HAL_Delay(500);
+  STATUS_IND_Toggle();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -209,13 +267,16 @@ int main(void)
   // uint32_t uid[3] = GET_BOARD_UUID();
 
   /* initialize servos */
-  uint32_t uid[3];
-  uid[0] = HAL_GetUIDw0();
-  uid[1] = HAL_GetUIDw1();
-  uid[2] = HAL_GetUIDw2();
-  Servo* servo = construct_servo (uid, &htim2);
-  Thermocouple* thermo = construct_thermo(uid, &hadc, &adc_val);
-  Heater* heater = construct_heater (uid, thermo);
+  uint32_t servo_can_id = GET_SERVO_CAN_ID(board_uid, 0);
+  uint32_t thermo_can_id = GET_THERMO_CAN_ID(board_uid, 0);
+  uint32_t heater_can_id = GET_HEATER_CAN_ID(board_uid, 0);
+  if (servo_can_id == -1 || thermo_can_id == -1 || heater_can_id == -1) {
+	  Error_Handler();
+  }
+
+  Servo* servo = construct_servo (servo_can_id, &htim2);
+  Thermocouple* thermo = construct_thermo(thermo_can_id, &hadc, &adc_val);
+  Heater* heater = construct_heater (heater_can_id, thermo);
 
   if (!servo) {
 	  CRITIAL_ERROR_GENERIC_On();
@@ -244,24 +305,20 @@ int main(void)
 
 
   // will run through a set of test commands to see if everything works then repeat
-  uint32_t last_toggle_time = 0;
-  SERVO_CMD servo_cmd = CLOSE_SERVO;
-  THERMO_CMD thermo_cmd = -1;
-  HEATER_CMD heater_cmd = H_AUTO;
   while (1)
   {
-	// will need to read CAN here
+    // Execute the current commands on each loop iteration
+    Tick_SERVO(servo_cmd, servo);
+    Tick_THERMO(thermo_cmd, thermo);
+    Tick_HEATER(heater_cmd, heater);
 
-
-	if (HAL_GetTick() - last_toggle_time >= 1000) {
-        last_toggle_time = HAL_GetTick();
-        servo_cmd = (servo_cmd == OPEN_SERVO) ? CLOSE_SERVO : OPEN_SERVO;
+    // Visual feedback when new command is received (optional)
+    if (new_command_received) {
+        STATUS_IND_Toggle();
+        new_command_received = 0;
     }
 
-	// now do the stuff
-	Tick_SERVO(servo_cmd, servo);
-	Tick_THERMO(thermo_cmd, thermo);
-	Tick_HEATER(heater_cmd, heater);
+    // Small delay to prevent hogging CPU
   }
     /* USER CODE END WHILE */
 
@@ -584,21 +641,56 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+/* USER CODE BEGIN 4 */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
+	STATUS_IND_Toggle();
     CAN_RxHeaderTypeDef RxHeader;
     uint8_t RxData[8];  // Max CAN data length = 8 bytes
 
-    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK)
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
     {
-        // Print CAN Message
-        printf("Received CAN ID: 0x%X, DLC: %d, Data: ", RxHeader.StdId, RxHeader.DLC);
-        for (int i = 0; i < RxHeader.DLC; i++)
-        {
-            printf("%02X ", RxData[i]);
+        Error_Handler();
+    }
+
+    // Parse extended ID to extract fields
+    uint8_t sender, board_id, comp_type, instance;
+    parseCanExtendedId(RxHeader.ExtId, &sender, &board_id, &comp_type, &instance);
+
+    // Check if message is intended for this board
+    if (board_id == short_board_id) {
+        // Set command based on component type
+        switch (comp_type) {
+            case COMP_TYPE_SERVO:
+                // First byte contains the servo command
+                servo_cmd = RxData[0];
+                servo_instance = instance;
+                new_command_received = 1;
+                break;
+
+            case COMP_TYPE_THERMOCOUPLE:
+                // First byte contains the thermocouple command
+                thermo_cmd = RxData[0];
+                thermo_instance = instance;
+                new_command_received = 1;
+                break;
+
+            case COMP_TYPE_HEATER:
+                // First byte contains the heater command
+                heater_cmd = RxData[0];
+                heater_instance = instance;
+                new_command_received = 1;
+                break;
+
+            case COMP_TYPE_LED:
+                // Toggle status LED for feedback
+                STATUS_IND_Toggle();
+                break;
+
+            default:
+                // Unknown component type
+                break;
         }
-        printf("\n");
-        STATUS_IND_On();
     }
 }
 

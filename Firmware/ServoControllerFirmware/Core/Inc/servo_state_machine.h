@@ -38,7 +38,6 @@ typedef enum {
 typedef enum {
 	OPEN_SERVO = 0,
 	CLOSE_SERVO = 1,
-	CHECK_SERVO = 2
 } SERVO_CMD;
 
 typedef struct  {
@@ -51,7 +50,7 @@ typedef struct  {
 
 //Function Prototypes
 void Tick_SERVO (uint8_t cmd, Servo* servo);
-Servo* construct_servo (const uint32_t board_uid[3], const TIM_HandleTypeDef *timer);
+Servo* construct_servo (const uint32_t can_id, const TIM_HandleTypeDef *timer);
 
 /**
   * @brief  The construct_servo function is used to create a servo.
@@ -63,8 +62,8 @@ Servo* construct_servo (const uint32_t board_uid[3], const TIM_HandleTypeDef *ti
   *
   * @retval struct Servo* returns a pointer to the constructed servo.
   */
-Servo* construct_servo (const uint32_t board_uid[3], const TIM_HandleTypeDef *timer) {
-    ServoConfig *sc = GET_SERVO_CONFIG((uint32_t *)board_uid);
+Servo* construct_servo (const uint32_t can_id, const TIM_HandleTypeDef *timer) {
+    ServoConfig *sc = GET_SERVO_CONFIG(can_id);
     if (!sc) {
         return NULL;
     }

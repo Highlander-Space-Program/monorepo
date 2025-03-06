@@ -21,7 +21,14 @@
 #ifndef INC_BOARD_UTILS_H_
 #define INC_BOARD_UTILS_H_
 
-#include "stm32f0xx_hal.h"
+#if defined(STM32F0)
+    #include "stm32f0xx_hal.h"
+#elif defined(STM32F405) || defined(STM32F4)
+    #include "stm32f4xx_hal.h"
+#else
+    #error "STM32 family not defined or not supported!"
+#endif
+
 #include "main.h"
 
 void STARTUP() {
@@ -41,17 +48,17 @@ void STATUS_IND_Toggle() {
 	HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin);
 }
 
-void WARN_IND_On() {
-	HAL_GPIO_WritePin(WARN_IND_GPIO_Port, WARN_IND_Pin, GPIO_PIN_SET);
-}
-
-void WARN_IND_Off() {
-	HAL_GPIO_WritePin(WARN_IND_GPIO_Port, WARN_IND_Pin, GPIO_PIN_RESET);
-}
-
-void WARN_IND_Toggle() {
-	HAL_GPIO_TogglePin(WARN_IND_GPIO_Port, WARN_IND_Pin);
-}
+//void WARN_IND_On() {
+//	HAL_GPIO_WritePin(WARN_IND_GPIO_Port, WARN_IND_Pin, GPIO_PIN_SET);
+//}
+//
+//void WARN_IND_Off() {
+//	HAL_GPIO_WritePin(WARN_IND_GPIO_Port, WARN_IND_Pin, GPIO_PIN_RESET);
+//}
+//
+//void WARN_IND_Toggle() {
+//	HAL_GPIO_TogglePin(WARN_IND_GPIO_Port, WARN_IND_Pin);
+//}
 
 // indicates a serious error, that can be ignored if you know what youre doing
 //void NON_CRITICAL_ERROR_On() {
@@ -78,10 +85,10 @@ void CRITIAL_ERROR_GENERIC_On() {
 //}
 
 
-void GET_BOARD_UUID(uint32_t* uid) {
-	uid[0] = HAL_GetUIDw0();
-	uid[1] = HAL_GetUIDw1();
-	uid[2] = HAL_GetUIDw2();
+void GET_BOARD_UUID(uint32_t* board_uid) {
+	board_uid[0] = HAL_GetUIDw0();
+	board_uid[1] = HAL_GetUIDw1();
+	board_uid[2] = HAL_GetUIDw2();
 }
 
 bool COMPARE_UID(uint32_t* board_uid, uint32_t* compare_uid) {
