@@ -20,7 +20,7 @@
 #include "stm32f0xx_hal.h"
 
 #include "servo_utils.h"
-#include "config/servo_board_config.h"
+#include "config/config.h"
 
 #define HSP_SERVO_MIN_PULSE_WIDTH 500
 #define HSP_SERVO_MAX_PULSE_WIDTH 2500

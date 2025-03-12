@@ -9,7 +9,7 @@
 #define INC_HEATER_STATE_MACHINE_H_
 
 #include "heater_utils.h"
-#include "config/servo_board_config.h"
+#include "config/config.h"
 
 
 //States of the heater
