@@ -30,6 +30,14 @@
 #endif
 
 #include "main.h"
+#include <stdbool.h>
+
+#define MAX_FLASH_TIME 3000
+
+static uint32_t flash_timer = 0;
+static uint32_t previous_flash = 0;
+
+static uint32_t tick = -1;
 
 void STARTUP() {
 
@@ -48,6 +56,26 @@ void STATUS_IND_Toggle() {
 	HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin);
 }
 
+bool Tick_SIGNAL(bool flash_signal_cmd) {
+	if (flash_timer == 0) {
+		flash_timer = HAL_GetTick();
+	}
+
+	uint32_t current_time = HAL_GetTick();
+	if (current_time - previous_flash > 250) {
+		previous_flash = current_time;
+		STATUS_IND_Toggle();
+	}
+
+	if (current_time - flash_timer > MAX_FLASH_TIME) {
+		flash_timer = 0;
+		flash_signal_cmd = 0;
+		STATUS_IND_Off();
+	}
+
+	return flash_signal_cmd;
+}
+
 //void WARN_IND_On() {
 //	HAL_GPIO_WritePin(WARN_IND_GPIO_Port, WARN_IND_Pin, GPIO_PIN_SET);
 //}
@@ -60,10 +88,6 @@ void STATUS_IND_Toggle() {
 //	HAL_GPIO_TogglePin(WARN_IND_GPIO_Port, WARN_IND_Pin);
 //}
 
-// indicates a serious error, that can be ignored if you know what youre doing
-//void NON_CRITICAL_ERROR_On() {
-//
-//}
 //
 //// indicates a critical error, that cannot be ignored. Board function compromised
 void CRITIAL_ERROR_GENERIC_On() {

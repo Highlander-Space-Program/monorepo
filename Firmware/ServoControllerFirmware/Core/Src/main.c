@@ -66,6 +66,8 @@ volatile uint8_t thermo_instance = -1;
 volatile HEATER_CMD heater_cmd = H_OFF;
 volatile uint8_t heater_instance = -1;
 volatile bool new_command_received = 0;
+volatile bool flash_signal_cmd = 0;
+
 /* USER CODE BEGIN PV */
 static volatile uint32_t adc_val = 0;
 
@@ -88,12 +90,12 @@ static void MX_ADC_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-enum COMMANDS {
-	SERVO_OPEN = 0,
-	SERVO_CLOSE = 1,
-	HEATER_ON = 2,
-	HEATER_OFF = 3
-};
+//enum COMMANDS {
+//	SERVO_OPEN = 0,
+//	SERVO_CLOSE = 1,
+//	HEATER_ON = 2,
+//	HEATER_OFF = 3
+//};
 
 void TestServo (Servo* servo) {
   while (1) {
@@ -218,8 +220,6 @@ int main(void)
   filter.FilterMaskIdHigh = (canIdMask >> 16) & 0xFFFF;
   filter.FilterMaskIdLow = canIdMask & 0xFFFF;
 
-
-
 //  CAN_FilterTypeDef filter;
 //
 //  // Configure filter to accept all extended IDs
@@ -235,8 +235,6 @@ int main(void)
 //  // Only require IDE bit match, mask everything else to 0
 //  filter.FilterMaskIdHigh = 0x0000;
 //  filter.FilterMaskIdLow = CAN_ID_EXT & 0xFFFF;
-
-
 
 
 
@@ -318,7 +316,11 @@ int main(void)
         new_command_received = 0;
     }
 
-    // Small delay to prevent hogging CPU
+    // more visual feedback
+
+    if (flash_signal_cmd) {
+    	flash_signal_cmd = Tick_SIGNAL (flash_signal_cmd);
+    }
   }
     /* USER CODE END WHILE */
 
@@ -644,7 +646,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-	STATUS_IND_Toggle();
+//	STATUS_IND_Toggle();
     CAN_RxHeaderTypeDef RxHeader;
     uint8_t RxData[8];  // Max CAN data length = 8 bytes
 
@@ -654,39 +656,42 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     }
 
     // Parse extended ID to extract fields
-    uint8_t sender, board_id, comp_type, instance;
-    parseCanExtendedId(RxHeader.ExtId, &sender, &board_id, &comp_type, &instance);
+    uint8_t sender, board_id, msg_type, instance;
+    parseCanExtendedId(RxHeader.ExtId, &sender, &board_id, &msg_type, &instance);
 
     // Check if message is intended for this board
     if (board_id == short_board_id) {
         // Set command based on component type
-        switch (comp_type) {
-            case COMP_TYPE_SERVO:
+        switch (msg_type) {
+            case MSG_TYPE_SERVO:
                 // First byte contains the servo command
                 servo_cmd = RxData[0];
                 servo_instance = instance;
                 new_command_received = 1;
                 break;
 
-            case COMP_TYPE_THERMOCOUPLE:
+            case MSG_TYPE_THERMOCOUPLE:
                 // First byte contains the thermocouple command
                 thermo_cmd = RxData[0];
                 thermo_instance = instance;
                 new_command_received = 1;
                 break;
 
-            case COMP_TYPE_HEATER:
+            case MSG_TYPE_HEATER:
                 // First byte contains the heater command
                 heater_cmd = RxData[0];
                 heater_instance = instance;
                 new_command_received = 1;
                 break;
 
-            case COMP_TYPE_LED:
+            case MSG_TYPE_LED:
                 // Toggle status LED for feedback
                 STATUS_IND_Toggle();
                 break;
 
+            case MSG_TYPE_FLASH_SIGNAL:
+            	flash_signal_cmd = 1;
+            	break;
             default:
                 // Unknown component type
                 break;
