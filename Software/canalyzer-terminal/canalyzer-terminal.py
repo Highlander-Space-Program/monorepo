@@ -23,44 +23,46 @@ Description: This code creates a Command Line Interface that a user can use to
 # - For arbitration (which message gets priority on the bus), lower CAN ID values have higher priority
 # - This means senders with lower IDs will always have priority over senders with higher IDs
 #
-# Sender field (8 bits - first part of ID, highest priority impact):
-# - 0: Break wire system (highest priority)
-# - 1: Pad controller
-# - 2: Servo board
-# - 3: Sensor board
-# - 4: Tester board (this code and controller)
-# - 254: Tester board (hardware)
-# - 255: PC/Terminal (lowest priority)
-# - 5-253: Reserved for future devices
-#
-# Board ID field (8 bits - identifies specific physical boards):
-# - 0-255: Unique identifier for each physical board in the system
-# - This allows up to 256 individual boards on the network
-#
-# Component type field (8 bits - defines what type of component is being addressed):
-# - 0: System/board control
-# - 1: Servo
-# - 2: Thermocouple
-# - 3: Pressure transducer
-# - 4: Heater
-# - 5: Valve
-# - 6: LED
-# - 7-255: Reserved for future component types
-#
-# Instance field (5 bits - identifies specific component instance):
-# - 0-31: Allows up to 32 instances of each component type per board
-# - For example, a board could have up to 32 servos, 32 thermocouples, etc.
-#
-# Example of a full extended ID:
-# 0x01050401 (hex) = 00000001 00000101 00000100 00001 (binary)
-#                     |        |        |        |
-#                     |        |        |        +-- Instance 1
-#                     |        |        +----------- Component Type 4 (Heater)
-#                     |        +-------------------- Board ID 5
-#                     +----------------------------- Sender 1 (Pad Controller)
-#
-# This example ID represents: "Pad Controller (1) sending a message to Board 5, 
-# addressing Heater (4), instance 1"
+#  CAN_ID is acquired based on a scheme. The first 11 bits are 0. the
+#  Sender field (8 bits - first part of ID, highest priority impact):
+#  - 0: Break wire system (highest priority)
+#  - 1: Pad controller
+#  - 2: Servo board
+#  - 3: Sensor board
+#  - 4: Tester board (this code and controller)
+#  - 254: Tester board (hardware)
+#  - 255: PC/Terminal (lowest priority)
+#  - 5-253: Reserved for future devices
+
+#  Board ID field (8 bits - identifies specific physical boards):
+#  - 0-255: Unique identifier for each physical board in the system
+#  - This allows up to 256 individual boards on the network
+
+#  Component type field (8 bits - defines what type of component is being addressed):
+#  - 0: System/board control
+#  - 1: Servo
+#  - 2: Thermocouple
+#  - 3: Pressure transducer
+#  - 4: Heater
+#  - 5: LED
+#  - 6: Flash Status
+#  - 8-255: Reserved for future component types
+
+#  Instance field (5 bits - identifies specific component instance):
+#  - 0-31: Allows up to 32 instances of each component type per board
+#  - For example, a board could have up to 32 servos, 32 thermocouples, etc.
+
+#  Example of a full extended ID:
+#  0x01050401 (hex) = 00000001 00000101 00000100 00001 000 (binary)
+#                      |        |        |        |     |
+#                      |        |        |        |		+-- Padding
+# 					   |		|		 |		  +-------- Instance 1
+#                      |        |        +----------------- Component Type 4 (Heater)
+#                      |        +-------------------------- Board ID 5
+#                      +----------------------------------- Sender 1 (Pad Controller)
+
+#  This example ID represents: "Pad Controller (1) sending a message to Board 5,
+#  addressing Heater (4), instance 1"
 
 # Sender type definitions:
 SENDER_BREAK_WIRE = 0
@@ -72,12 +74,13 @@ SENDER_HW_TESTER = 254
 SENDER_PC = 255
 
 # Component type definitions:
-COMP_TYPE_SYSTEM = 0
-COMP_TYPE_SERVO = 1
-COMP_TYPE_THERMOCOUPLE = 2
-COMP_TYPE_PRESSURE = 3
-COMP_TYPE_HEATER = 4
-COMP_TYPE_LED = 5
+MSG_TYPE_SYSTEM = 0
+MSG_TYPE_SERVO = 1
+MSG_TYPE_THERMOCOUPLE = 2
+MSG_TYPE_PRESSURE = 3
+MSG_TYPE_HEATER = 4
+MSG_TYPE_LED = 5
+MSG_TYPE_FLASH_SIGNAL = 6
 
 # From servo_state_machine.h
 SERVO_CMD_OPEN = 0    # OPEN_SERVO
@@ -142,20 +145,20 @@ def format_extended_id(ext_id):
     Returns:
         str: A human-readable representation
     """
-    sender, board_id, comp_type, instance = parse_extended_id(ext_id)
+    sender, board_id, msg_type, instance = parse_extended_id(ext_id)
     
     # Translate component types
-    comp_type_str = "Unknown"
-    if comp_type == COMP_TYPE_SERVO:
-        comp_type_str = "Servo"
-    elif comp_type == COMP_TYPE_THERMOCOUPLE:
-        comp_type_str = "Thermocouple"
-    elif comp_type == COMP_TYPE_PRESSURE:
-        comp_type_str = "Pressure"
-    elif comp_type == COMP_TYPE_HEATER:
-        comp_type_str = "Heater"
-    elif comp_type == COMP_TYPE_LED:
-        comp_type_str = "LED"
+    msg_type_str = "Unknown"
+    if msg_type == MSG_TYPE_SERVO:
+        msg_type_str = "Servo"
+    elif msg_type == MSG_TYPE_THERMOCOUPLE:
+        msg_type_str = "Thermocouple"
+    elif msg_type == MSG_TYPE_PRESSURE:
+        msg_type_str = "Pressure"
+    elif msg_type == MSG_TYPE_HEATER:
+        msg_type_str = "Heater"
+    elif msg_type == MSG_TYPE_LED:
+        msg_type_str = "LED"
     
     # Translate sender
     sender_str = "Unknown"
@@ -174,7 +177,7 @@ def format_extended_id(ext_id):
     elif sender == SENDER_PC:
         sender_str = "PC/Terminal"
     
-    return f"Sender: {sender_str}({sender}), Board: {board_id}, Component: {comp_type_str}({comp_type}), Instance: {instance}"
+    return f"Sender: {sender_str}({sender}), Board: {board_id}, Component: {msg_type_str}({msg_type}), Instance: {instance}"
 
 def receive_thread(ser, rx_queue):
     """Thread function to continuously receive data from serial port"""
@@ -310,7 +313,7 @@ def create_toggle_tester_led(board_id=254, instance=0):
     packet = bytearray(PACKET_SIZE)
     
     # Create extended ID for tester board LED: sender=PC, board=254 (tester), comp=LED (6), instance=0
-    id_val = create_extended_id(SENDER_PC, board_id, COMP_TYPE_LED, instance)
+    id_val = create_extended_id(SENDER_PC, board_id, MSG_TYPE_LED, instance)
     
     packet[0] = (id_val >> 24) & 0xFF
     packet[1] = (id_val >> 16) & 0xFF
@@ -328,11 +331,29 @@ def toggle_tester_led(tx_queue, board_id=254, instance=0):
     packet = create_toggle_tester_led(board_id, instance)
     tx_queue.put(packet)
 
+def create_signal_all_leds(tx_queue, board_id=254):
+    """Creates a packet to toggle the LED on the tester board"""
+    packet = bytearray(PACKET_SIZE)
+    
+    # Create extended ID for tester board LED: sender=PC, board=254 (tester), comp=LED (6), instance=0
+    id_val = create_extended_id(SENDER_PC, board_id, MSG_TYPE_FLASH_SIGNAL, 0)
+    
+    packet[0] = (id_val >> 24) & 0xFF
+    packet[1] = (id_val >> 16) & 0xFF
+    packet[2] = (id_val >> 8) & 0xFF
+    packet[3] = id_val & 0xFF
+    
+    # Command to toggle LED
+    packet[11] = 0x01
+    
+    tx_queue.put(packet)
+
 def config_messages(tx_queue):
     """Menu for config messages"""
     print("\nSelect the config message you'd like to send\n")
     print("t - Toggle LED on tester board (ID 254)")
     print("l - Toggle LED on specific board")
+    print("s - Signal all LEDs on board")
     print("v - Toggle verbose mode")
     
     config_user_in = input("Select your option: ")
@@ -343,6 +364,13 @@ def config_messages(tx_queue):
             board_id = int(input("Enter board ID (0-255): "), 10)
             instance = int(input("Enter LED instance (0-31, default 0): ") or "0", 10)
             toggle_tester_led(tx_queue, board_id, instance)
+        except ValueError as e:
+            print(f"Error: {e}")
+            print("Please use valid values")
+    elif config_user_in.lower() == "s":
+        try:
+            board_id = int(input("Enter board ID (0-255): "), 10)
+            create_signal_all_leds(tx_queue, board_id)
         except ValueError as e:
             print(f"Error: {e}")
             print("Please use valid values")
@@ -372,18 +400,18 @@ def raw_message(tx_queue):
         board_id = int(input("Board ID (0-255): "), 10)
         
         print("\nComponent type options:")
-        print(f"  {COMP_TYPE_SYSTEM}: System/Board Control")
-        print(f"  {COMP_TYPE_SERVO}: Servo")
-        print(f"  {COMP_TYPE_THERMOCOUPLE}: Thermocouple")
-        print(f"  {COMP_TYPE_PRESSURE}: Pressure Transducer")
-        print(f"  {COMP_TYPE_HEATER}: Heater")
-        print(f"  {COMP_TYPE_LED}: LED")
-        comp_type = int(input("Component Type (0-255): "), 10)
+        print(f"  {MSG_TYPE_SYSTEM}: System/Board Control")
+        print(f"  {MSG_TYPE_SERVO}: Servo")
+        print(f"  {MSG_TYPE_THERMOCOUPLE}: Thermocouple")
+        print(f"  {MSG_TYPE_PRESSURE}: Pressure Transducer")
+        print(f"  {MSG_TYPE_HEATER}: Heater")
+        print(f"  {MSG_TYPE_LED}: LED")
+        msg_type = int(input("Component Type (0-255): "), 10)
         
         instance = int(input("Instance (0-31): "), 10)
         
         # Create the extended ID
-        ext_id = create_extended_id(sender, board_id, comp_type, instance)
+        ext_id = create_extended_id(sender, board_id, msg_type, instance)
         
         packet = bytearray(PACKET_SIZE)
         packet[0] = (ext_id >> 24) & 0xFF
@@ -410,7 +438,7 @@ def create_sensor_board_toggle_led(board_id, instance):
     packet = bytearray(PACKET_SIZE)
     
     # Create extended ID - now addressing the LED component type directly
-    ext_id = create_extended_id(SENDER_PC, board_id, COMP_TYPE_LED, instance)
+    ext_id = create_extended_id(SENDER_PC, board_id, MSG_TYPE_LED, instance)
     
     packet[0] = (ext_id >> 24) & 0xFF
     packet[1] = (ext_id >> 16) & 0xFF
@@ -430,7 +458,7 @@ def sensor_board_toggle_led(board_id, instance, tx_queue):
 def sensor_board_get_value(tx_queue, board_id, instance):
     """Queries the value from a sensor board"""
     # Create the query ID
-    ext_id = create_extended_id(SENDER_TESTER_BOARD, board_id, COMP_TYPE_PRESSURE, instance)
+    ext_id = create_extended_id(SENDER_TESTER_BOARD, board_id, MSG_TYPE_PRESSURE, instance)
     
     tx_queue.put(ext_id)
     
@@ -462,12 +490,12 @@ def sensor_board_messages(tx_queue):
         print(f"Error processing sensor board message: {e}")
 
 # Servo Board Functions
-def create_servo_board_packet(board_id, comp_type, instance, command_value):
+def create_servo_board_packet(board_id, msg_type, instance, command_value):
     """Creates a generic packet for sending to a servo board component
     
     Args:
         board_id (int): Board ID (0-255)
-        comp_type (int): Component type (1=servo, 2=thermocouple, 4=heater)
+        msg_type (int): Component type (1=servo, 2=thermocouple, 4=heater)
         instance (int): Instance number (0-31)
         command_value (int): Command value matching the state machine commands
         
@@ -477,7 +505,7 @@ def create_servo_board_packet(board_id, comp_type, instance, command_value):
     packet = bytearray(PACKET_SIZE)
     
     # Create extended ID
-    ext_id = create_extended_id(SENDER_PC, board_id, comp_type, instance)
+    ext_id = create_extended_id(SENDER_PC, board_id, msg_type, instance)
     
     packet[0] = (ext_id >> 24) & 0xFF
     packet[1] = (ext_id >> 16) & 0xFF
@@ -501,7 +529,7 @@ def servo_board_set_servo_position(tx_queue, board_id, instance, is_open):
     # Use the proper command from servo_state_machine.h
     command = SERVO_CMD_OPEN if is_open else SERVO_CMD_CLOSE
     
-    packet = create_servo_board_packet(board_id, COMP_TYPE_SERVO, instance, command)
+    packet = create_servo_board_packet(board_id, MSG_TYPE_SERVO, instance, command)
     tx_queue.put(packet)
     
     action = "OPEN" if is_open else "CLOSE"
@@ -516,7 +544,7 @@ def servo_board_query_thermocouple(tx_queue, board_id, instance):
         instance (int): Thermocouple instance (0-31)
     """
     # Use the FORCE_GET_TEMP command from the thermocouple state machine
-    packet = create_servo_board_packet(board_id, COMP_TYPE_THERMOCOUPLE, instance, THERMO_CMD_GET_TEMP)
+    packet = create_servo_board_packet(board_id, MSG_TYPE_THERMOCOUPLE, instance, THERMO_CMD_GET_TEMP)
     tx_queue.put(packet)
     
     print(f"Sent command to get temperature from thermocouple {instance} on board {board_id}")
@@ -530,7 +558,7 @@ def servo_board_reset_thermocouple_timer(tx_queue, board_id, instance):
         board_id (int): Board ID (0-255)
         instance (int): Thermocouple instance (0-31)
     """
-    packet = create_servo_board_packet(board_id, COMP_TYPE_THERMOCOUPLE, instance, THERMO_CMD_RESET_TIMER)
+    packet = create_servo_board_packet(board_id, MSG_TYPE_THERMOCOUPLE, instance, THERMO_CMD_RESET_TIMER)
     tx_queue.put(packet)
     
     print(f"Sent command to reset timer for thermocouple {instance} on board {board_id}")
@@ -549,7 +577,7 @@ def servo_board_heater_control(tx_queue, board_id, instance, mode):
         print(f"Invalid heater mode: {mode}. Using OFF mode.")
         mode = HEATER_CMD_OFF
     
-    packet = create_servo_board_packet(board_id, COMP_TYPE_HEATER, instance, mode)
+    packet = create_servo_board_packet(board_id, MSG_TYPE_HEATER, instance, mode)
     tx_queue.put(packet)
     
     mode_str = "OFF" if mode == HEATER_CMD_OFF else "ON" if mode == HEATER_CMD_ON else "AUTO"
@@ -561,9 +589,9 @@ def servo_board_messages(tx_queue):
         # Display information about the servo board components
         print("\n=== Servo Board Control Interface ===")
         print("The servo board can control multiple component types:")
-        print(f"  {COMP_TYPE_SERVO}: Servo motors (Instance 0-31)")
-        print(f"  {COMP_TYPE_THERMOCOUPLE}: Thermocouples (Instance 0-31)")
-        print(f"  {COMP_TYPE_HEATER}: Heaters (Instance 0-31)")
+        print(f"  {MSG_TYPE_SERVO}: Servo motors (Instance 0-31)")
+        print(f"  {MSG_TYPE_THERMOCOUPLE}: Thermocouples (Instance 0-31)")
+        print(f"  {MSG_TYPE_HEATER}: Heaters (Instance 0-31)")
         print("\nBased on config file, board ID 1 is a known servo board.")
         
         # Get board ID
@@ -571,13 +599,13 @@ def servo_board_messages(tx_queue):
         
         # Select component type
         print("\nSelect component type:")
-        print(f"1 - Servo ({COMP_TYPE_SERVO})")
-        print(f"2 - Thermocouple ({COMP_TYPE_THERMOCOUPLE})")
-        print(f"4 - Heater ({COMP_TYPE_HEATER})")
+        print(f"1 - Servo ({MSG_TYPE_SERVO})")
+        print(f"2 - Thermocouple ({MSG_TYPE_THERMOCOUPLE})")
+        print(f"4 - Heater ({MSG_TYPE_HEATER})")
+
+        msg_choice = input("Enter choice (1/2/4): ")
         
-        comp_choice = input("Enter choice (1/2/4): ")
-        
-        if comp_choice == "1":  # Servo
+        if msg_choice == "1":  # Servo
             instance = int(input("Enter servo instance (0-31): "), 10)
             
             print("\nServo Control Options:")
@@ -593,7 +621,7 @@ def servo_board_messages(tx_queue):
             else:
                 print("Invalid action selected")
                 
-        elif comp_choice == "2":  # Thermocouple
+        elif msg_choice == "2":  # Thermocouple
             instance = int(input("Enter thermocouple instance (0-31): "), 10)
             
             print("\nThermocouple Options:")
@@ -609,7 +637,7 @@ def servo_board_messages(tx_queue):
             else:
                 print("Invalid action selected")
                 
-        elif comp_choice == "4":  # Heater
+        elif msg_choice == "4":  # Heater
             instance = int(input("Enter heater instance (0-31): "), 10)
             
             print("\nHeater Control Options:")
@@ -640,11 +668,11 @@ def main():
     print(f"Verbose mode: {'On' if verbose_mode else 'Off'}")
     print("Extended ID Format: [8 bits sender][8 bits board ID][8 bits component type][5 bits instance]")
     print("\nComponent Types:")
-    print(f"  {COMP_TYPE_SERVO}: Servo")
-    print(f"  {COMP_TYPE_THERMOCOUPLE}: Thermocouple")
-    print(f"  {COMP_TYPE_PRESSURE}: Pressure Transducer")
-    print(f"  {COMP_TYPE_HEATER}: Heater")
-    print(f"  {COMP_TYPE_LED}: LED")
+    print(f"  {MSG_TYPE_SERVO}: Servo")
+    print(f"  {MSG_TYPE_THERMOCOUPLE}: Thermocouple")
+    print(f"  {MSG_TYPE_PRESSURE}: Pressure Transducer")
+    print(f"  {MSG_TYPE_HEATER}: Heater")
+    print(f"  {MSG_TYPE_LED}: LED")
     
     # Create message queues
     tx_queue = queue.Queue()
