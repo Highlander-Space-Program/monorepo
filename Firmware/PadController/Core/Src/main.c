@@ -25,6 +25,10 @@
 #include "config/config.h"
 #include "utils/board_utils.h"
 #include "utils/can_utils.h"
+#include "utils/radio_utils.h"
+#include "config/servo_config.h"
+#include "config/heater_config.h"
+#include "config/thermo_config.h"
 
 /* USER CODE END Includes */
 
@@ -36,6 +40,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define LENGTH 8
+#define NUM_BOARDS 3
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -46,35 +51,73 @@
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan1;
 
+UART_HandleTypeDef huart6;
+
 /* USER CODE BEGIN PV */
-static uint8_t servo_cmd;
 uint32_t board_uid[3];
 uint8_t data[LENGTH];
+bool servos_activated = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
+static void MX_USART6_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void TOGGLE_SERVO() {
-	uint32_t servo_board_ext_id = 0x00010108;
-	if (servo_cmd == 1) {
-		servo_cmd = 0;
-	} else {
-		servo_cmd = 1;
-	}
+//void TOGGLE_SERVO_TEST() {
+//	uint32_t servo_board_ext_id = 0x00010108;
+//
+//	if (servo_cmd == 1) {
+//		servo_cmd = 0;
+//	} else {
+//		servo_cmd = 1;
+//	}
+//
+//	data [0] = servo_cmd;
+//	HAL_StatusTypeDef status = send_can_msg(servo_board_ext_id, data, LENGTH, &hcan1);
+//	if (status != HAL_OK) {
+//	    HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
+//	}
+//}
 
+// 0 is open 1 is close for servo_cmd. see SERVO_CMD in servo_state_machine.h
+void ACTUATE_SERVO(uint32_t ext_id, uint8_t servo_cmd) {
 	data [0] = servo_cmd;
-	HAL_StatusTypeDef status = send_can_msg(servo_board_ext_id, data, LENGTH, &hcan1);
+	HAL_StatusTypeDef status = send_can_msg(ext_id, data, LENGTH, &hcan1);
 	if (status != HAL_OK) {
 	    HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
 	}
+}
+
+void PAD_CONTROLLER_SETUP_ROUTINE (uint32_t* board_can_ids, uint8_t numBoards){
+  STATUS_IND_Toggle();
+  HAL_Delay(500);
+  STATUS_IND_Toggle();
+
+  FLASH_ALL (board_can_ids, numBoards);
+}
+
+// send a flash signal throguh all the boards
+void FLASH_ALL (uint32_t* board_can_ids, uint8_t numBoards) {
+  uint8_t short_board_id;
+  uint32_t* board_uid;
+
+  //0x01020600
+  for (int i = 0; i < numBoards; i++) {
+	board_uid = GET_BOARD_UID_FROM_CAN_ID (board_can_ids[i]);
+	short_board_id = GET_SHORT_BOARD_ID (board_uid);
+	uint32_t ext_id = build_can_extended_id (SENDER_PAD_CONTROLLER, short_board_id, MSG_TYPE_FLASH_SIGNAL, 0x00);
+	HAL_StatusTypeDef status = send_can_msg(ext_id, data, LENGTH, &hcan1);
+	if (status != HAL_OK) {
+		HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
+	}
+  }
 }
 /* USER CODE END 0 */
 
@@ -108,8 +151,10 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
+  MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  HAL_UART_Receive_IT(&huart6, rx_buff, 1);
   GET_BOARD_UID (board_uid);
 //  short_board_id = GET_SHORT_BOARD_ID (board_uid);
 
@@ -140,14 +185,119 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  memset(data, 0, sizeof(data));
+  uint32_t* no2_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N02");
+  uint32_t* no3_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N03");
+  uint32_t* no4_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N04");
+
+  uint32_t no2_can_id = GET_CAN_ID_FROM_BOARD_UID (no2_board_uid);
+  uint32_t no3_can_id = GET_CAN_ID_FROM_BOARD_UID (no3_board_uid);
+  uint32_t no4_can_id = GET_CAN_ID_FROM_BOARD_UID (no4_board_uid);
+
+  uint32_t board_can_ids[NUM_BOARDS] = {no2_can_id, no3_can_id, no4_can_id};
+  PAD_CONTROLLER_SETUP_ROUTINE (board_can_ids, NUM_BOARDS);
+
+  uint32_t current = HAL_GetTick();
+  uint32_t prev = current;
+  uint32_t servo_can_id;
+  uint32_t heater_can_id;
+  uint32_t thermo_can_id;
+
+  ack = Create_Ack();
+
   while (1)
   {
-	  // check radio
+//	  enum COMMANDS {
+//	    SIGNAL_ALL = 0,  // previously OPEN_EO1 = 0,
+//	    REPORT_ALL = 1,  // previously CLOSE_EO1 = 1,
+//	  //  OPEN_NO6 = 2,
+//	  //  CLOSE_NO6 = 3,
+//	    OPEN_NO4 = 4,
+//	    CLOSE_NO4 = 5,
+//	    OPEN_NO3 = 6,
+//	    CLOSE_NO3 = 7,
+//	    START_1 = 8,
+//	    OPEN_NO2 = 9,
+//	    CLOSE_NO2 = 10,
+//	    CLOSE_ALL = 12,
+//	    DECLOSE_ALL = 13,
+//	    ACTIVATE_IGNITER = 14,
+//	    DEACTIVATE_IGNITER = 15,
+//	    ABORT = 16,
+//	    ACTIVATE_SERVOS = 17,
+//	    DEACTIVATE_SERVOS = 18,
+//	    DEABORT = 19,
+//	    CHECK_STATE = 20,
+//	    DESTART = 21,
+//	  };
+	// determine
+	switch (rx_buff[0]){
+		case SIGNAL_ALL:
+			FLASH_ALL (board_can_ids, NUM_BOARDS);
+			break;
+		case REPORT_ALL:
+			// debugging option
+			break;
+		case ACTIVATE_SERVOS:
+			servos_activated = 1;
+			break;
+		case DEACTIVATE_SERVOS:
+			servos_activated = 0;
+			break;
+		case OPEN_NO2:
+			if (servos_activated) {
+				Update_Ack(&ack, 5, 0);
+				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 0);
+				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+			}
+			break;
+		case CLOSE_NO2:
+			if (servos_activated) {
+				Update_Ack(&ack, 5, 1);
+				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 0);
+				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+			}
+			break;
+		case OPEN_NO3:
+			if (servos_activated) {
+				Update_Ack(&ack, 4, 0);
+				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 0);
+				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+			}
+			break;
+		case CLOSE_NO3:
+			if (servos_activated) {
+				Update_Ack(&ack, 4, 1);
+				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 0);
+				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+			}
+			break;
+		case OPEN_NO4:
+			if (servos_activated) {
+				Update_Ack(&ack, 3, 0);
+				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 0);
+				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+			}
+			break;
+		case CLOSE_NO4:
+			if (servos_activated) {
+				Update_Ack(&ack, 3, 1);
+				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 0);
+				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+			}
+			break;
+		default:
+			break;
+	}
 
-	  //
-	  TOGGLE_SERVO();
-	  HAL_Delay(1000);
+	current = HAL_GetTick();
+	if (current - prev >= 150) {
+		tx_buff[0] = ack;
+		HAL_UART_Transmit_IT(&huart6, tx_buff, 1);
+		prev = current;
+	}
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -231,6 +381,39 @@ static void MX_CAN1_Init(void)
 }
 
 /**
+  * @brief USART6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART6_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART6_Init 0 */
+
+  /* USER CODE END USART6_Init 0 */
+
+  /* USER CODE BEGIN USART6_Init 1 */
+
+  /* USER CODE END USART6_Init 1 */
+  huart6.Instance = USART6;
+  huart6.Init.BaudRate = 9600;
+  huart6.Init.WordLength = UART_WORDLENGTH_8B;
+  huart6.Init.StopBits = UART_STOPBITS_1;
+  huart6.Init.Parity = UART_PARITY_NONE;
+  huart6.Init.Mode = UART_MODE_TX_RX;
+  huart6.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart6.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART6_Init 2 */
+
+  /* USER CODE END USART6_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -261,6 +444,17 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+   HAL_UART_Receive_IT(&huart6, rx_buff, 1);
+   STATUS_IND_Toggle();
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+//   STATUS_IND_Toggle();
+}
+
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	CAN_RxHeaderTypeDef rxHeader;

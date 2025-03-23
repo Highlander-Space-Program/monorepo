@@ -17,4 +17,14 @@ typedef struct {
     uint16_t frequency;
 } ThermoConfig;
 
+typedef enum {
+	TEMP_WAIT = 0,
+	TEMP_GET = 1
+} THERMO_STATE;
+
+typedef enum {
+	FORCE_GET_TEMP = 0,
+	FORCE_RESET_TIMER = 1
+} THERMO_CMD;
+
 #endif /* INC_COREUTILS_CONFIG_THERMO_CONFIG_H_ */

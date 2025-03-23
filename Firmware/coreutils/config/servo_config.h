@@ -19,4 +19,16 @@ typedef struct {
 	uint16_t frequency;
 } ServoConfig;
 
+typedef enum {
+	ON_CLOSED = 0,
+	OFF_CLOSED = 1,
+	ON_OPEN = 2,
+	OFF_OPEN = 3
+} SERVO_STATE;
+
+typedef enum {
+	OPEN_SERVO = 0,
+	CLOSE_SERVO = 1,
+} SERVO_CMD;
+
 #endif /* INC_COREUTILS_CONFIG_SERVO_CONFIG_H_ */

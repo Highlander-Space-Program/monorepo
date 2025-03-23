@@ -33,12 +33,22 @@ HAL_StatusTypeDef send_can_msg(const uint32_t extId, const uint8_t *data, const 
     return HAL_CAN_AddTxMessage(hcan, &header, data, &mailbox);
 }
 
+// returns the shifted extended ID
+uint32_t build_can_extended_id(uint8_t sender, uint8_t boardId, uint8_t msgType, uint8_t instance) {
+    uint32_t extId = 0;
+    extId |= ((uint32_t)sender << EXT_ID_SENDER_SHIFT);
+    extId |= ((uint32_t)boardId << EXT_ID_BOARD_ID_SHIFT);
+    extId |= ((uint32_t)msgType << EXT_ID_COMP_TYPE_SHIFT);
+    extId |= ((uint32_t)instance & EXT_ID_INSTANCE_MASK);
+    extId = extId << 3;
+    return extId;
+}
 
-void parseCanExtendedId(const uint32_t extId, uint8_t *sender, uint8_t *boardId,
-                        uint8_t *compType, uint8_t *instance) {
+void parse_can_extended_id(const uint32_t extId, uint8_t *sender, uint8_t *boardId,
+                        uint8_t *msgType, uint8_t *instance) {
     *sender = (extId >> EXT_ID_SENDER_SHIFT) & 0xFF;
     *boardId = (extId >> EXT_ID_BOARD_ID_SHIFT) & 0xFF;
-    *compType = (extId >> EXT_ID_COMP_TYPE_SHIFT) & 0xFF;
+    *msgType = (extId >> EXT_ID_COMP_TYPE_SHIFT) & 0xFF;
     *instance = extId & EXT_ID_INSTANCE_MASK;
 }
 

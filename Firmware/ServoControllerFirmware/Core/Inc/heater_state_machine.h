@@ -9,28 +9,8 @@
 #define INC_HEATER_STATE_MACHINE_H_
 
 #include "heater_utils.h"
+#include "config/heater_config.h"
 #include "config/config.h"
-
-
-//States of the heater
-typedef enum {
-  DIR_OFF = 0,
-  DIR_ON = 1,
-  DIR_AUTO = 2
-} HEATER_DIRECTIVE;
-
-//States of the heater
-typedef enum {
-  OFF = 0,
-  ON = 1,
-} HEATER_STATE;
-
-//commands for the heater
-typedef enum  {
-  H_OFF = 0,
-  H_ON = 1,
-  H_AUTO = 2
-} HEATER_CMD;
 
 typedef struct  {
   HeaterConfig* heater_config;

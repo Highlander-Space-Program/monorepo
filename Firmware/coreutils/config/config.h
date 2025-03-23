@@ -33,10 +33,10 @@ enum BOARD_CAN_ID_MAPPING {
 };
 
 enum COMMANDS {
-  OPEN_EO1 = 0,
-  CLOSE_EO1 = 1,
-  OPEN_NO6 = 2,
-  CLOSE_NO6 = 3,
+  SIGNAL_ALL = 0,  // previously OPEN_EO1 = 0,
+  REPORT_ALL = 1,  // previously CLOSE_EO1 = 1,
+//  OPEN_NO6 = 2,
+//  CLOSE_NO6 = 3,
   OPEN_NO4 = 4,
   CLOSE_NO4 = 5,
   OPEN_NO3 = 6,
@@ -54,7 +54,6 @@ enum COMMANDS {
   DEABORT = 19,
   CHECK_STATE = 20,
   DESTART = 21,
-  CHECK_CONNECTED = 22
 };
 
 void GET_BOARD_UID (uint32_t* board_uid) {
@@ -99,11 +98,40 @@ uint32_t GET_CAN_ID_FROM_BOARD_UID(uint32_t* board_uid) {
     return -1;
 }
 
+uint32_t* GET_BOARD_ID_FROM_PNID(char* pnid) {
+    ServoConfig* servo_lookup_table = GET_SERVO_CONFIGS();
+    ThermoConfig* thermo_lookup_table = GET_THERMO_CONFIGS();
+    HeaterConfig* heater_lookup_table = GET_HEATER_CONFIGS();
+
+    // Check servo configurations
+    for (int i = 0; i < GET_NUM_SERVO_CONFIGS(); i++) {
+        if (strcmp(pnid, servo_lookup_table[i].pnid) == 0) {
+            return servo_lookup_table[i].board_uid;
+        }
+    }
+
+    // Check thermo configurations
+    for (int i = 0; i < GET_NUM_THERMO_CONFIGS(); i++) {
+    	if (strcmp(pnid, thermo_lookup_table[i].pnid) == 0) {
+            return thermo_lookup_table[i].board_uid;
+        }
+    }
+
+    // Check heater configurations
+    for (int i = 0; i < GET_NUM_HEATER_CONFIGS(); i++) {
+    	if (strcmp(pnid, heater_lookup_table[i].pnid) == 0) {
+            return heater_lookup_table[i].board_uid;
+        }
+    }
+
+    // Return NULL if not found
+    return NULL;
+}
+
 uint8_t GET_SHORT_BOARD_ID (uint32_t* board_uid) {
 	uint32_t can_id = GET_CAN_ID_FROM_BOARD_UID(board_uid);
 	return (can_id >> 16) & 0xFF;
 }
-
 
 /**
  * Gets board UID from CAN ID by searching through configuration tables

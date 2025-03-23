@@ -11,15 +11,7 @@
 #include <thermocouple_utils.h>
 #include <float.h>
 
-typedef enum {
-	TEMP_WAIT = 0,
-	TEMP_GET = 1
-} THERMO_STATE;
-
-typedef enum {
-	FORCE_GET_TEMP = 0,
-	FORCE_RESET_TIMER = 1
-} THERMO_CMD;
+#include "config/thermo_config.h"
 
 typedef struct {
   ThermoConfig* thermo_config;

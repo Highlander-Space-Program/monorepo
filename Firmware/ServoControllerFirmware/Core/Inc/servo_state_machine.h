@@ -20,25 +20,13 @@
 #include "stm32f0xx_hal.h"
 
 #include "servo_utils.h"
+#include "config/servo_config.h"
 #include "config/config.h"
 
 #define HSP_SERVO_MIN_PULSE_WIDTH 500
 #define HSP_SERVO_MAX_PULSE_WIDTH 2500
 #define HSP_SERVO_PWM_PERIOD 20000
 #define HSP_SERVO_WAIT_TIME 10000 // in milliseconds
-
-// Forward declarations
-typedef enum {
-	ON_CLOSED = 0,
-	OFF_CLOSED = 1,
-	ON_OPEN = 2,
-	OFF_OPEN = 3
-} SERVO_STATE;
-
-typedef enum {
-	OPEN_SERVO = 0,
-	CLOSE_SERVO = 1,
-} SERVO_CMD;
 
 typedef struct  {
   ServoConfig* servo_config;

@@ -657,7 +657,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
     // Parse extended ID to extract fields
     uint8_t sender, board_id, msg_type, instance;
-    parseCanExtendedId(RxHeader.ExtId, &sender, &board_id, &msg_type, &instance);
+    parse_can_extended_id(RxHeader.ExtId, &sender, &board_id, &msg_type, &instance);
 
     // Check if message is intended for this board
     if (board_id == short_board_id) {
