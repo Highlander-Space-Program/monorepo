@@ -157,7 +157,9 @@ int main(void)
 		isStarted = false;
 	}
 	if (rx_buff[0] == AUTO_ON) {
-		isAutoArmed = true;
+		if (Check_Breakwire() == GPIO_PIN_SET) {
+			isAutoArmed = true;
+		}
 	}
 	if (rx_buff[0] == AUTO_OFF) {
 		isAutoArmed = false;
@@ -562,7 +564,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : BRK_CONT_Pin */
   GPIO_InitStruct.Pin = BRK_CONT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BRK_CONT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : NO2_EN_Pin NO3_EN_Pin NO4_EN_Pin NO6_EN_Pin
