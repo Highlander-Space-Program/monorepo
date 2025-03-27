@@ -40,7 +40,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define LENGTH 8
-#define NUM_BOARDS 3
+#define NUM_BOARDS 4
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -188,12 +188,14 @@ int main(void)
   uint32_t* no2_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N02");
   uint32_t* no3_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N03");
   uint32_t* no4_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N04");
+  uint32_t* pyro_board_uid = GET_BOARD_ID_FROM_PNID ("FV-PYRO");
 
   uint32_t no2_can_id = GET_CAN_ID_FROM_BOARD_UID (no2_board_uid);
   uint32_t no3_can_id = GET_CAN_ID_FROM_BOARD_UID (no3_board_uid);
   uint32_t no4_can_id = GET_CAN_ID_FROM_BOARD_UID (no4_board_uid);
+  uint32_t pyro_can_id = GET_CAN_ID_FROM_BOARD_UID (pyro_board_uid);
 
-  uint32_t board_can_ids[NUM_BOARDS] = {no2_can_id, no3_can_id, no4_can_id};
+  uint32_t board_can_ids[NUM_BOARDS] = {no2_can_id, no3_can_id, no4_can_id, pyro_can_id};
   PAD_CONTROLLER_SETUP_ROUTINE (board_can_ids, NUM_BOARDS);
 
   uint32_t current = HAL_GetTick();
