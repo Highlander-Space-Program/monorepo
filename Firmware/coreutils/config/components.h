@@ -12,6 +12,7 @@
 #include "thermo_config.h"
 #include "heater_config.h"
 #include "servo_config.h"
+#include "pt_config.h"
 
 // BoardID is acquired from the F042Diagnostic. Use debugger to see values inside uid variable after board id is acquired.
 
@@ -81,6 +82,11 @@ HeaterConfig heater_lookup_table[] = {
 	{{0x003a0042, 0x48585311, 0x20373733}, 0x00040408, "H-05", 29, 27, 100}
 };
 
+// BoardID, CAN_ID, NAME, FREQUENCY, GAIN, OFFSET
+PtConfig pt_lookup_table[] = {
+	{{0x002b002c, 0x48585314, 0x20373733}, 0x00110308, "PT-01", 0, 0, 100}
+};
+
 ServoConfig* GET_SERVO_CONFIGS() {
 	return servo_lookup_table;
 }
@@ -93,22 +99,30 @@ HeaterConfig* GET_HEATER_CONFIGS() {
 	return heater_lookup_table;
 }
 
+PtConfig* GET_PT_CONFIGS() {
+	return pt_lookup_table;
+}
+
 
 size_t GET_NUM_SERVO_CONFIGS() {
-    return sizeof(servo_lookup_table) / sizeof(servo_lookup_table[0]);
+    return sizeof(servo_lookup_table) / sizeof(ServoConfig);
 }
 
 size_t GET_NUM_THERMO_CONFIGS() {
-    return sizeof(thermo_lookup_table) / sizeof(thermo_lookup_table[0]);
+    return sizeof(thermo_lookup_table) / sizeof(ThermoConfig);
 }
 
 size_t GET_NUM_HEATER_CONFIGS() {
-    return sizeof(heater_lookup_table) / sizeof(heater_lookup_table[0]);
+    return sizeof(heater_lookup_table) / sizeof(HeaterConfig);
+}
+
+size_t GET_NUM_PT_CONFIGS() {
+	return sizeof(pt_lookup_table) / sizeof(PtConfig);
 }
 
 
 ServoConfig* GET_SERVO_CONFIG(const uint32_t can_id) {
-    for (int i = 0; i < sizeof(servo_lookup_table) / sizeof(servo_lookup_table[0]); i++) {
+    for (int i = 0; i < sizeof(servo_lookup_table) / sizeof(ServoConfig); i++) {
         if (can_id == servo_lookup_table[i].can_id) {
             return &servo_lookup_table[i]; // Return pointer to matching ServoConfig
         }
@@ -117,7 +131,7 @@ ServoConfig* GET_SERVO_CONFIG(const uint32_t can_id) {
 }
 
 ThermoConfig* GET_THERMO_CONFIG(const uint32_t can_id) {
-    for (int i = 0; i < sizeof(thermo_lookup_table) / sizeof(thermo_lookup_table[0]); i++) {
+    for (int i = 0; i < sizeof(thermo_lookup_table) / sizeof(ThermoConfig); i++) {
     	if (can_id == thermo_lookup_table[i].can_id) {
             return &thermo_lookup_table[i]; // Return pointer to matching ServoConfig
         }
@@ -126,7 +140,7 @@ ThermoConfig* GET_THERMO_CONFIG(const uint32_t can_id) {
 }
 
 HeaterConfig* GET_HEATER_CONFIG(const uint32_t can_id) {
-    for (int i = 0; i < sizeof(heater_lookup_table) / sizeof(heater_lookup_table[0]); i++) {
+    for (int i = 0; i < sizeof(heater_lookup_table) / sizeof(HeaterConfig); i++) {
     	if (can_id == heater_lookup_table[i].can_id) {
             return &heater_lookup_table[i]; // Return pointer to matching ServoConfig
         }
@@ -134,10 +148,18 @@ HeaterConfig* GET_HEATER_CONFIG(const uint32_t can_id) {
     return NULL; // Return NULL if no match is found
 }
 
+PtConfig* GET_PT_CONFIG(const uint32_t can_id) {
+	for (int i = 0; i < sizeof(pt_lookup_table) / sizeof(PtConfig); i++) {
+		if (can_id == pt_lookup_table[i].can_id) {
+			return &pt_lookup_table[i];
+		}
+	}
+}
+
 
 // instance-- is after because zero indexed
 uint32_t GET_SERVO_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
-	for (int i = 0; i < sizeof(servo_lookup_table) / sizeof(servo_lookup_table[0]); i++) {
+	for (int i = 0; i < sizeof(servo_lookup_table) / sizeof(ServoConfig); i++) {
 		if (memcmp(board_uid, servo_lookup_table[i].board_uid, sizeof(servo_lookup_table[i].board_uid)) == 0) {
 			if (instance == 0) {
 				return servo_lookup_table[i].can_id;
@@ -149,7 +171,7 @@ uint32_t GET_SERVO_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 }
 
 uint32_t GET_THERMO_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
-	for (int i = 0; i < sizeof(thermo_lookup_table) / sizeof(thermo_lookup_table[0]); i++) {
+	for (int i = 0; i < sizeof(thermo_lookup_table) / sizeof(ThermoConfig); i++) {
 		if (memcmp(board_uid, thermo_lookup_table[i].board_uid, sizeof(thermo_lookup_table[i].board_uid)) == 0) {
 			if (instance == 0) {
 				return thermo_lookup_table[i].can_id;
@@ -161,10 +183,22 @@ uint32_t GET_THERMO_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 }
 
 uint32_t GET_HEATER_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
-	for (int i = 0; i < sizeof(heater_lookup_table) / sizeof(heater_lookup_table[0]); i++) {
+	for (int i = 0; i < sizeof(heater_lookup_table) / sizeof(HeaterConfig); i++) {
 		if (memcmp(board_uid, heater_lookup_table[i].board_uid, sizeof(heater_lookup_table[i].board_uid)) == 0) {
 			if (instance == 0) {
 				return heater_lookup_table[i].can_id;
+			}
+			instance--;
+		}
+	}
+	return -1;
+}
+
+uint32_t GET_PT_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
+	for (int i = 0; i < sizeof(pt_lookup_table) / sizeof(PtConfig); i++) {
+		if (memcmp(board_uid, pt_lookup_table[i].board_uid, sizeof(pt_lookup_table[i].board_uid)) == 0) {
+			if (instance == 0) {
+				return pt_lookup_table[i].can_id;
 			}
 			instance--;
 		}

@@ -69,7 +69,7 @@ void Tick_THERMO (uint8_t cmd, Thermocouple* thermo) {
 		case FORCE_GET_TEMP:
 			thermo->state = TEMP_GET;
 			break;
-		case FORCE_RESET_TIMER:
+		case FORCE_RESET_THERMO_TIMER:
 			thermo->last_tick_update = HAL_GetTick();
 			break;
 	}

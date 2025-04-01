@@ -72,6 +72,7 @@ uint32_t GET_CAN_ID_FROM_BOARD_UID(uint32_t* board_uid) {
     ServoConfig* servo_lookup_table = GET_SERVO_CONFIGS();
     ThermoConfig* thermo_lookup_table = GET_THERMO_CONFIGS();
     HeaterConfig* heater_lookup_table = GET_HEATER_CONFIGS();
+    PtConfig* pt_lookup_table = GET_PT_CONFIGS();
 
     // Check servo configurations
     for (int i = 0; i < GET_NUM_SERVO_CONFIGS(); i++) {
@@ -94,6 +95,13 @@ uint32_t GET_CAN_ID_FROM_BOARD_UID(uint32_t* board_uid) {
         }
     }
 
+    // Check pt configurations
+    for (int i = 0; i < GET_NUM_PT_CONFIGS(); i++) {
+    	if (memcmp(board_uid, pt_lookup_table[i].board_uid, sizeof(pt_lookup_table[i].board_uid)) == 0) {
+    		return pt_lookup_table[i].can_id;
+    	}
+    }
+
     // Return 0 if not found
     return -1;
 }
@@ -102,6 +110,7 @@ uint32_t* GET_BOARD_ID_FROM_PNID(char* pnid) {
     ServoConfig* servo_lookup_table = GET_SERVO_CONFIGS();
     ThermoConfig* thermo_lookup_table = GET_THERMO_CONFIGS();
     HeaterConfig* heater_lookup_table = GET_HEATER_CONFIGS();
+    PtConfig* pt_lookup_table = GET_PT_CONFIGS();
 
     // Check servo configurations
     for (int i = 0; i < GET_NUM_SERVO_CONFIGS(); i++) {
@@ -124,6 +133,12 @@ uint32_t* GET_BOARD_ID_FROM_PNID(char* pnid) {
         }
     }
 
+    for (int i = 0; i < GET_NUM_PT_CONFIGS(); i++) {
+    	if (strcmp(pnid, pt_lookup_table[i].pnid) == 0) {
+    		return pt_lookup_table[i].board_uid;
+    	}
+    }
+
     // Return NULL if not found
     return NULL;
 }
@@ -143,6 +158,7 @@ uint32_t* GET_BOARD_UID_FROM_CAN_ID(uint32_t can_id) {
     ServoConfig* servo_lookup_table = GET_SERVO_CONFIGS();
     ThermoConfig* thermo_lookup_table = GET_THERMO_CONFIGS();
     HeaterConfig* heater_lookup_table = GET_HEATER_CONFIGS();
+    PtConfig* pt_lookup_table = GET_PT_CONFIGS();
 
     // Check servo configurations
     for (int i = 0; i < GET_NUM_SERVO_CONFIGS(); i++) {
@@ -163,6 +179,12 @@ uint32_t* GET_BOARD_UID_FROM_CAN_ID(uint32_t can_id) {
         if (heater_lookup_table[i].can_id == can_id) {
             return heater_lookup_table[i].board_uid;
         }
+    }
+
+    for (int i = 0; i < GET_NUM_PT_CONFIGS(); i++) {
+    	if (pt_lookup_table[i].can_id == can_id) {
+    		return pt_lookup_table[i].board_uid;
+    	}
     }
 
     // Return NULL if not found
