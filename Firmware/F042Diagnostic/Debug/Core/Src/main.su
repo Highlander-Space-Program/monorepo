@@ -1,0 +1,12 @@
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:42:6:STARTUP	8	static
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:47:6:STATUS_IND_On	8	static
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:51:6:STATUS_IND_Off	8	static
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:55:6:STATUS_IND_Toggle	8	static
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:59:6:Tick_SIGNAL	24	static
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:93:6:CRITIAL_ERROR_GENERIC_On	8	static
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:112:6:GET_BOARD_UUID	24	static
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:118:6:COMPARE_UID	16	static
+../Core/Src/main.c:65:5:main	24	static
+../Core/Src/main.c:114:6:SystemClock_Config	88	static
+../Core/Src/main.c:150:13:MX_GPIO_Init	48	static
+../Core/Src/main.c:182:6:Error_Handler	8	static,ignoring_inline_asm

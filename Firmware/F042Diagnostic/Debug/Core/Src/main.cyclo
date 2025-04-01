@@ -1,0 +1,12 @@
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:42:6:STARTUP	1
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:47:6:STATUS_IND_On	1
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:51:6:STATUS_IND_Off	1
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:55:6:STATUS_IND_Toggle	1
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:59:6:Tick_SIGNAL	4
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:93:6:CRITIAL_ERROR_GENERIC_On	1
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:112:6:GET_BOARD_UUID	1
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:118:6:COMPARE_UID	1
+../Core/Src/main.c:65:5:main	1
+../Core/Src/main.c:114:6:SystemClock_Config	3
+../Core/Src/main.c:150:13:MX_GPIO_Init	1
+../Core/Src/main.c:182:6:Error_Handler	1
