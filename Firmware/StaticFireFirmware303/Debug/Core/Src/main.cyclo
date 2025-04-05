@@ -4,8 +4,8 @@
 ../Core/Inc/breakwire.h:17:6:Breakwire_LED_On	1
 ../Core/Inc/breakwire.h:21:6:Breakwire_LED_Off	1
 ../Core/Inc/breakwire.h:25:6:Tick_Breakwire_LED	5
-../Core/Inc/eo1.h:17:6:Tick_EO1	26
-../Core/Inc/no6.h:17:6:Tick_NO6	26
+../Core/Inc/eo1.h:17:6:Tick_EO1	28
+../Core/Inc/no6.h:17:6:Tick_NO6	28
 ../Core/Inc/no4.h:16:6:Tick_NO4	19
 ../Core/Inc/no3.h:16:6:Tick_NO3	19
 ../Core/Inc/no2.h:16:6:Tick_NO2	19

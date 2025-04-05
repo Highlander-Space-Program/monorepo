@@ -79,6 +79,7 @@ uint8_t ack = 0x00;
 #define HSP_SERVO_PWM_PERIOD 20000
 #define HSP_SERVO_MAX_DEG 270
 #define HSP_NO3_SERVO_MAX_DEG 270
+#define BREAKWIRE_OPEN_DELAY_MS 4000
 
 #define EO1_OPENED_DEG 90
 #define EO1_CLOSED_DEG 180
@@ -106,7 +107,7 @@ struct Servo servos[] = {
 };
 
 enum IGNITER_STATE {IGNITER_INIT, IGNITER_DEACTIVATED, IGNITER_ACTIVATED} igniterState = IGNITER_INIT;
-enum SERVO_STATE {SERVO_INIT, SERVO_CLOSED_OFF, SERVO_CLOSED_ON, SERVO_OPENED_ON, SERVO_OPENED_OFF};
+enum SERVO_STATE {SERVO_INIT, SERVO_CLOSED_OFF, SERVO_CLOSED_ON, SERVO_CLOSED_DELAY, SERVO_OPENED_ON, SERVO_OPENED_OFF};
 enum SERVO_STATE eo1State = SERVO_INIT;
 enum SERVO_STATE no6State = SERVO_INIT;
 enum SERVO_STATE no4State = SERVO_INIT;
@@ -117,6 +118,7 @@ uint64_t no3_on_time = 0;
 uint64_t no4_on_time = 0;
 uint64_t no6_on_time = 0;
 uint64_t eo1_on_time = 0;
+uint64_t breakwire_delay_start = 0;
 uint8_t rx_buff[1];
 uint8_t tx_buff[1];
 

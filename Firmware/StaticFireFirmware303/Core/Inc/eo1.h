@@ -26,7 +26,8 @@ void Tick_EO1 (uint8_t cmd, struct Servo *servo) {
 		case SERVO_CLOSED_OFF:
 		if (isAutoArmed && Check_Breakwire() == GPIO_PIN_RESET) {
 			eo1_on_time = HAL_GetTick();
-			eo1State = SERVO_OPENED_ON;
+			breakwire_delay_start = eo1_on_time;
+			eo1State = SERVO_CLOSED_DELAY;
 		}
 		else if (cmd == CLOSE_EO1) {
 			eo1_on_time = HAL_GetTick();
@@ -41,7 +42,8 @@ void Tick_EO1 (uint8_t cmd, struct Servo *servo) {
 		case SERVO_CLOSED_ON:
 		if (isAutoArmed && Check_Breakwire() == GPIO_PIN_RESET) {
 			eo1_on_time = HAL_GetTick();
-			eo1State = SERVO_OPENED_ON;
+			breakwire_delay_start = eo1_on_time;
+			eo1State = SERVO_CLOSED_DELAY;
 		}
 		else if (cmd == OPEN_EO1 || cmd == START_1) {
 			eo1_on_time = HAL_GetTick();
@@ -72,6 +74,13 @@ void Tick_EO1 (uint8_t cmd, struct Servo *servo) {
 			eo1State = SERVO_OPENED_OFF;
 		}
 		break;
+
+		case SERVO_CLOSED_DELAY:
+		if (HAL_GetTick() - breakwire_delay_start > BREAKWIRE_OPEN_DELAY_MS) {
+			eo1_on_time = HAL_GetTick();
+			eo1State = SERVO_OPENED_ON;
+		}
+		break;
 	}
 
 	//actions
@@ -84,8 +93,9 @@ void Tick_EO1 (uint8_t cmd, struct Servo *servo) {
 		break;
 
 		case SERVO_CLOSED_ON:
-		HAL_GPIO_WritePin(EO1_EN_GPIO_Port, EO1_EN_Pin, GPIO_PIN_SET);
-		*servo->ccr = Deg_To_CCR(EO1_CLOSED_DEG, servo, HSP_SERVO_MAX_DEG);
+//		commented bc pyro valve
+//		HAL_GPIO_WritePin(EO1_EN_GPIO_Port, EO1_EN_Pin, GPIO_PIN_SET);
+//		*servo->ccr = Deg_To_CCR(EO1_CLOSED_DEG, servo, HSP_SERVO_MAX_DEG);
 		break;
 
 		case SERVO_OPENED_OFF:
@@ -95,6 +105,10 @@ void Tick_EO1 (uint8_t cmd, struct Servo *servo) {
 		case SERVO_OPENED_ON:
 		HAL_GPIO_WritePin(EO1_EN_GPIO_Port, EO1_EN_Pin, GPIO_PIN_SET);
 		*servo->ccr = Deg_To_CCR(EO1_OPENED_DEG, servo, HSP_SERVO_MAX_DEG);
+		break;
+
+		case SERVO_CLOSED_DELAY:
+		HAL_GPIO_WritePin(EO1_EN_GPIO_Port, EO1_EN_Pin, GPIO_PIN_RESET);
 		break;
 
 	}

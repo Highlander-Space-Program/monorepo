@@ -4,8 +4,8 @@
 ../Core/Inc/breakwire.h:17:6:Breakwire_LED_On	8	static
 ../Core/Inc/breakwire.h:21:6:Breakwire_LED_Off	8	static
 ../Core/Inc/breakwire.h:25:6:Tick_Breakwire_LED	24	static
-../Core/Inc/eo1.h:17:6:Tick_EO1	112	static
-../Core/Inc/no6.h:17:6:Tick_NO6	112	static
+../Core/Inc/eo1.h:17:6:Tick_EO1	136	static
+../Core/Inc/no6.h:17:6:Tick_NO6	136	static
 ../Core/Inc/no4.h:16:6:Tick_NO4	96	static
 ../Core/Inc/no3.h:16:6:Tick_NO3	96	static
 ../Core/Inc/no2.h:16:6:Tick_NO2	96	static
