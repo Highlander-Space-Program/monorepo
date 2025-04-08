@@ -95,14 +95,6 @@ void ACTUATE_SERVO(uint32_t ext_id, uint8_t servo_cmd) {
 	}
 }
 
-void PAD_CONTROLLER_SETUP_ROUTINE (uint32_t* board_can_ids, uint8_t numBoards){
-  STATUS_IND_Toggle();
-  HAL_Delay(500);
-  STATUS_IND_Toggle();
-
-  FLASH_ALL (board_can_ids, numBoards);
-}
-
 // send a flash signal throguh all the boards
 void FLASH_ALL (uint32_t* board_can_ids, uint8_t numBoards) {
   uint8_t short_board_id;
@@ -118,6 +110,14 @@ void FLASH_ALL (uint32_t* board_can_ids, uint8_t numBoards) {
 		HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
 	}
   }
+}
+
+void PAD_CONTROLLER_SETUP_ROUTINE (uint32_t* board_can_ids, uint8_t numBoards){
+  STATUS_IND_Toggle();
+  HAL_Delay(500);
+  STATUS_IND_Toggle();
+
+  FLASH_ALL (board_can_ids, numBoards);
 }
 /* USER CODE END 0 */
 

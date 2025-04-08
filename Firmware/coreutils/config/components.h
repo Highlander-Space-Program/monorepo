@@ -84,7 +84,8 @@ HeaterConfig heater_lookup_table[] = {
 
 // BoardID, CAN_ID, NAME, FREQUENCY, GAIN, OFFSET
 PtConfig pt_lookup_table[] = {
-	{{0x002b002c, 0x48585314, 0x20373733}, 0x00110308, "PT-01", 0, 0, 100}
+	{{0x002b002c, 0x48585314, 0x20373733}, 0x00110308, "PT-01", 100, 0, 100, 'A'},
+	{{0x002b002c, 0x48585314, 0x20373733}, 0x00110310, "PT-02", 5000, 0, 100, 'B'}
 };
 
 ServoConfig* GET_SERVO_CONFIGS() {
@@ -154,6 +155,7 @@ PtConfig* GET_PT_CONFIG(const uint32_t can_id) {
 			return &pt_lookup_table[i];
 		}
 	}
+	return NULL;
 }
 
 
@@ -161,10 +163,9 @@ PtConfig* GET_PT_CONFIG(const uint32_t can_id) {
 uint32_t GET_SERVO_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 	for (int i = 0; i < sizeof(servo_lookup_table) / sizeof(ServoConfig); i++) {
 		if (memcmp(board_uid, servo_lookup_table[i].board_uid, sizeof(servo_lookup_table[i].board_uid)) == 0) {
-			if (instance == 0) {
+			if (instance == ((servo_lookup_table[i].can_id >> 3) & 0x1F)) {
 				return servo_lookup_table[i].can_id;
 			}
-			instance--;
 		}
 	}
 	return -1;
@@ -173,7 +174,7 @@ uint32_t GET_SERVO_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 uint32_t GET_THERMO_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 	for (int i = 0; i < sizeof(thermo_lookup_table) / sizeof(ThermoConfig); i++) {
 		if (memcmp(board_uid, thermo_lookup_table[i].board_uid, sizeof(thermo_lookup_table[i].board_uid)) == 0) {
-			if (instance == 0) {
+			if (instance == ((servo_lookup_table[i].can_id >> 3) & 0x1F)) {
 				return thermo_lookup_table[i].can_id;
 			}
 			instance--;
@@ -185,10 +186,9 @@ uint32_t GET_THERMO_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 uint32_t GET_HEATER_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 	for (int i = 0; i < sizeof(heater_lookup_table) / sizeof(HeaterConfig); i++) {
 		if (memcmp(board_uid, heater_lookup_table[i].board_uid, sizeof(heater_lookup_table[i].board_uid)) == 0) {
-			if (instance == 0) {
+			if (instance == ((servo_lookup_table[i].can_id >> 3) & 0x1F)) {
 				return heater_lookup_table[i].can_id;
 			}
-			instance--;
 		}
 	}
 	return -1;
@@ -197,10 +197,9 @@ uint32_t GET_HEATER_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 uint32_t GET_PT_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 	for (int i = 0; i < sizeof(pt_lookup_table) / sizeof(PtConfig); i++) {
 		if (memcmp(board_uid, pt_lookup_table[i].board_uid, sizeof(pt_lookup_table[i].board_uid)) == 0) {
-			if (instance == 0) {
+			if (instance == ((pt_lookup_table[i].can_id >> 3) & 0x1F)) {
 				return pt_lookup_table[i].can_id;
 			}
-			instance--;
 		}
 	}
 	return -1;
