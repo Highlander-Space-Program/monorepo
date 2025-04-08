@@ -85,10 +85,14 @@ HeaterConfig heater_lookup_table[] = {
 
 // BoardID, CAN_ID, NAME, FREQUENCY, GAIN, OFFSET
 PtConfig pt_lookup_table[] = {
+<<<<<<< Updated upstream
 	{{0x002b002c, 0x48585314, 0x20373733}, 0x00110308, "PT-01", 100, 0, 100, 'A'},
 	{{0x002b002c, 0x48585314, 0x20373733}, 0x00110310, "PT-02", 5000, 0, 100, 'B'},
 	{{0x0032001e, 0x46304317, 0x200003e0}, 0x00120308, "PT-03", 5000, 0, 100, 'B'},
 	{{0x0032001e, 0x46304317, 0x200003e0}, 0x00110310, "PT-04", 100, 0, 100, 'A'}
+=======
+	{{0x002b002c, 0x48585314, 0x20373733}, 0x03010308, "PT-PLACEHOLDER", 0, 0, 100, 'A'}
+>>>>>>> Stashed changes
 };
 
 BoardConfig board_lookup_table[] = {
@@ -96,8 +100,12 @@ BoardConfig board_lookup_table[] = {
 		{{0x0032002D, 0x48585314, 0x20373733}, 0x02, "LEONARDO", "FV-NO3"},
 		{{0x00310043, 0x48585311, 0x20373733}, 0x03, "MICHELANGELO", "FV-NO4"},
 		{{0x003a0042, 0x48585311, 0x20373733}, 0x04, "RAPHAEL", "FV-PYRO"},
+<<<<<<< Updated upstream
 		{{0x002b002c, 0x48585314, 0x20373733}, 0x11, "SPLINTER", "PT-PLACEHOLDER-1"},
 		{{0x0032001e, 0x46304317, 0x200003e0}, 0x12, "APRIL", "PT-PLACEHOLDER-2"}
+=======
+		{{0x002b002c, 0x48585314, 0x20373733}, 0x11, "SPLINTER", "PT-PLACEHOLDER"}
+>>>>>>> Stashed changes
 };
 
 ServoConfig* GET_SERVO_CONFIGS() {
