@@ -101,7 +101,7 @@ void FLASH_ALL (uint32_t* board_can_ids, uint8_t numBoards) {
   uint32_t* board_uid;
 
   //0x01020600
-  for (int i = 0; i < numBoards; i++) {
+  for (int i = 0; i < GET_NUM_BOARD_CONFIGS(); i++) {
 	board_uid = GET_BOARD_UID_FROM_CAN_ID (board_can_ids[i]);
 	short_board_id = GET_SHORT_BOARD_ID (board_uid);
 	uint32_t ext_id = build_can_extended_id (SENDER_PAD_CONTROLLER, short_board_id, MSG_TYPE_FLASH_SIGNAL, 0x00);

@@ -37,6 +37,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/heater_config.h \
  C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/servo_config.h \
  C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/pt_config.h \
+ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/board_config.h \
  C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/pad_config.h \
  C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/flight_config.h \
  C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/pt_config.h \
@@ -81,6 +82,7 @@ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/thermo_config.h:
 C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/heater_config.h:
 C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/servo_config.h:
 C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/pt_config.h:
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/board_config.h:
 C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/pad_config.h:
 C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/flight_config.h:
 C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/pt_config.h:
