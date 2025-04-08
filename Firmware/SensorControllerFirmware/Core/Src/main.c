@@ -610,12 +610,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM2) {
 //		Handle PT_A timer interrupt
 		volatile uint32_t ticks = HAL_GetTick();
-		STATUS_IND_Toggle();
+//		STATUS_IND_Toggle();
 	}
 	if (htim->Instance == TIM3) {
 //		Handle PT_B timer interrupt
 		volatile uint32_t ticks = HAL_GetTick();
-		STATUS_IND_Toggle();
+//		STATUS_IND_Toggle();
 	}
 
 }

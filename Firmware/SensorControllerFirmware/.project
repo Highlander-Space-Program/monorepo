@@ -29,4 +29,11 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>coreutils</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Firmware/coreutils</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>

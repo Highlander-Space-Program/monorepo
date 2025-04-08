@@ -29,7 +29,19 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_spi_ex.h \
  ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim.h \
  ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim_ex.h \
- ../Core/Inc/ADS1118.h
+ ../Core/Inc/ADS1118.h \
+ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/config.h \
+ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/sensor_board_config.h \
+ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/components.h \
+ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/thermo_config.h \
+ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/heater_config.h \
+ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/servo_config.h \
+ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/pt_config.h \
+ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/pad_config.h \
+ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/flight_config.h \
+ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/pt_config.h \
+ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h \
+ C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/can_utils.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal.h:
 ../Core/Inc/stm32f0xx_hal_conf.h:
@@ -62,3 +74,15 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim.h:
 ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim_ex.h:
 ../Core/Inc/ADS1118.h:
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/config.h:
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/sensor_board_config.h:
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/components.h:
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/thermo_config.h:
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/heater_config.h:
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/servo_config.h:
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/pt_config.h:
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/pad_config.h:
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/flight_config.h:
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/config/pt_config.h:
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:
+C:/Users/zande/Desktop/HSP/monorepo/Firmware/coreutils/utils/can_utils.h:
