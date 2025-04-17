@@ -12,7 +12,10 @@
 #include "components.h"
 #include "pad_config.h"
 #include "flight_config.h"
+#include <stdbool.h>
 
+
+extern bool isAutoArmed;
 enum MESSAGE_TYPE {
      MSG_TYPE_SYSTEM = 0,
      MSG_TYPE_SERVO = 1,

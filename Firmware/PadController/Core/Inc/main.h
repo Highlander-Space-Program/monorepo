@@ -60,6 +60,14 @@ void Error_Handler(void);
 #define STATUS_IND_Pin GPIO_PIN_13
 #define STATUS_IND_GPIO_Port GPIOC
 
+#define CONT_PIN0 GPIO_PIN_6
+#define CONT_PIN0_GPIO_Port GPIOB
+
+#define CONT_PIN1 GPIO_PIN_7
+#define CONT_PIN1_GPIO_Port GPIOB
+
+
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

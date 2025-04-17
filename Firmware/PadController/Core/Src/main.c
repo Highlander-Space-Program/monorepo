@@ -18,7 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+#include "breakwire.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdbool.h"
@@ -31,6 +31,7 @@
 #include "config/thermo_config.h"
 
 /* USER CODE END Includes */
+
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
@@ -57,6 +58,8 @@ UART_HandleTypeDef huart6;
 uint32_t board_uid[3];
 uint8_t data[LENGTH];
 bool servos_activated = 0;
+
+bool isAutoArmed = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -97,13 +100,12 @@ void ACTUATE_SERVO(uint32_t ext_id, uint8_t servo_cmd) {
 
 void PAD_CONTROLLER_SETUP_ROUTINE (uint32_t* board_can_ids, uint8_t numBoards){
   STATUS_IND_Toggle();
-  HAL_Delay(500);
   STATUS_IND_Toggle();
 
   FLASH_ALL (board_can_ids, numBoards);
 }
 
-// send a flash signal throguh all the boards
+// send a flash signal throguh all the boards]
 void FLASH_ALL (uint32_t* board_can_ids, uint8_t numBoards) {
   uint8_t short_board_id;
   uint32_t* board_uid;
@@ -182,6 +184,22 @@ int main(void)
   HAL_CAN_Start(&hcan1);
   /* USER CODE END 2 */
 
+
+
+while (1){
+	GPIO_PinState state1 = HAL_GPIO_ReadPin(CONT_PIN0_GPIO_Port, CONT_PIN0);
+	GPIO_PinState state2 = HAL_GPIO_ReadPin(CONT_PIN1_GPIO_Port, CONT_PIN1);
+	if (state1 == GPIO_PIN_RESET && state2 == GPIO_PIN_RESET)
+	{
+	    HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin);
+	}
+	else
+	{
+	    // Turn LED off
+	    HAL_GPIO_WritePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin, GPIO_PIN_RESET);
+	}
+
+}
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
