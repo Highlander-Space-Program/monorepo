@@ -26,7 +26,7 @@
 #define HSP_SERVO_MIN_PULSE_WIDTH 500
 #define HSP_SERVO_MAX_PULSE_WIDTH 2500
 #define HSP_SERVO_PWM_PERIOD 20000
-#define HSP_SERVO_WAIT_TIME 10000 // in milliseconds
+#define HSP_SERVO_WAIT_TIME 3000 // in milliseconds
 
 typedef struct  {
   ServoConfig* servo_config;
@@ -62,7 +62,7 @@ Servo* construct_servo (const uint32_t can_id, const TIM_HandleTypeDef *timer) {
     }
 
     servo->servo_config     = sc;
-    servo->state            = ON_CLOSED;
+    servo->state            = OFF_CLOSED;
     servo->last_tick_update = HAL_GetTick();
     servo->timer            = timer;
     servo->ccr              = &(timer->Instance->CCR1);

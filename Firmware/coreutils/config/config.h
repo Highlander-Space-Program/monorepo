@@ -35,8 +35,8 @@ enum BOARD_CAN_ID_MAPPING {
 enum COMMANDS {
   SIGNAL_ALL = 0,  // previously OPEN_EO1 = 0,
   REPORT_ALL = 1,  // previously CLOSE_EO1 = 1,
-//  OPEN_NO6 = 2,
-//  CLOSE_NO6 = 3,
+  OPEN_PYRO = 2,
+  CLOSE_PYRO = 3,
   OPEN_NO4 = 4,
   CLOSE_NO4 = 5,
   OPEN_NO3 = 6,

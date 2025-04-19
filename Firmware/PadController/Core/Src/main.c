@@ -254,43 +254,57 @@ int main(void)
 		case OPEN_NO2:
 			if (servos_activated) {
 				Update_Ack(&ack, 5, 0);
-				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 0);
+				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
 				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
 			}
 			break;
 		case CLOSE_NO2:
 			if (servos_activated) {
 				Update_Ack(&ack, 5, 1);
-				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 0);
+				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
 				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
 			}
 			break;
 		case OPEN_NO3:
 			if (servos_activated) {
 				Update_Ack(&ack, 4, 0);
-				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 0);
+				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
 				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
 			}
 			break;
 		case CLOSE_NO3:
 			if (servos_activated) {
 				Update_Ack(&ack, 4, 1);
-				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 0);
+				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
 				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
 			}
 			break;
 		case OPEN_NO4:
 			if (servos_activated) {
 				Update_Ack(&ack, 3, 0);
-				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 0);
+				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
 				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
 			}
 			break;
 		case CLOSE_NO4:
 			if (servos_activated) {
 				Update_Ack(&ack, 3, 1);
-				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 0);
+				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
 				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+			}
+			break;
+		case OPEN_PYRO:
+			if (servos_activated) {
+				Update_Ack(&ack, 2, 0);
+				servo_can_id = GET_SERVO_CAN_ID (pyro_board_uid, 1);
+				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+			}
+			break;
+		case CLOSE_PYRO:
+			if (servos_activated) {
+				Update_Ack(&ack, 2, 1);
+//				do nothing and let servo turn off
+//				bc pyro valve
 			}
 			break;
 		default:
@@ -454,7 +468,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-   HAL_UART_Receive_IT(&huart6, rx_buff, 1);
+    HAL_UART_Receive_IT(&huart6, rx_buff, 1);
    STATUS_IND_Toggle();
 }
 

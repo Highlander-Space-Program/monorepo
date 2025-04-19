@@ -265,9 +265,9 @@ int main(void)
   // uint32_t uid[3] = GET_BOARD_UUID();
 
   /* initialize servos */
-  uint32_t servo_can_id = GET_SERVO_CAN_ID(board_uid, 0);
-  uint32_t thermo_can_id = GET_THERMO_CAN_ID(board_uid, 0);
-  uint32_t heater_can_id = GET_HEATER_CAN_ID(board_uid, 0);
+  uint32_t servo_can_id = GET_SERVO_CAN_ID(board_uid, 1);
+  uint32_t thermo_can_id = GET_THERMO_CAN_ID(board_uid, 1);
+  uint32_t heater_can_id = GET_HEATER_CAN_ID(board_uid, 1);
   if (servo_can_id == -1 || thermo_can_id == -1 || heater_can_id == -1) {
 	  Error_Handler();
   }
