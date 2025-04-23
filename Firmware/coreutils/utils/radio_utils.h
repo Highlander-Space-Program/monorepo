@@ -15,8 +15,8 @@ static uint8_t tx_buff[1];
 static uint8_t ack = 0x00;
 
 // ACK is a 6 bit message, where each bit corresponds to turning on the lights on the control box.
-// 0,		0,		0,   	0, 		0,      0  		=> 000000
-// no2,		no3,  	no4,	no6, 	eo1, 	ignitor => all off
+// 0, 0, 0,		0,		0,   	0, 		0,      0  		=> 00000000
+// 0, 0, no2,		no3,  	no4,	no6, 	eo1, 	ignitor => all off
 void Update_Ack(uint8_t* ack, uint8_t shift_amount, bool is_off) {
     if (is_off) {
         *ack &= ~(1 << shift_amount);  // Clear the bit

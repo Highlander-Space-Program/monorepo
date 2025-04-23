@@ -238,79 +238,162 @@ int main(void)
 //	    DESTART = 21,
 //	  };
 	// determine
-	switch (rx_buff[0]){
-		case SIGNAL_ALL:
-			FLASH_ALL (board_can_ids, NUM_BOARDS);
-			break;
-		case REPORT_ALL:
-			// debugging option
-			break;
-		case ACTIVATE_SERVOS:
-			servos_activated = 1;
-			break;
-		case DEACTIVATE_SERVOS:
-			servos_activated = 0;
-			break;
-		case OPEN_NO2:
-			if (servos_activated) {
-				Update_Ack(&ack, 5, 0);
-				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
-				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-			}
-			break;
-		case CLOSE_NO2:
-			if (servos_activated) {
-				Update_Ack(&ack, 5, 1);
-				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
-				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
-			}
-			break;
-		case OPEN_NO3:
-			if (servos_activated) {
-				Update_Ack(&ack, 4, 0);
-				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
-				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-			}
-			break;
-		case CLOSE_NO3:
-			if (servos_activated) {
-				Update_Ack(&ack, 4, 1);
-				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
-				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
-			}
-			break;
-		case OPEN_NO4:
-			if (servos_activated) {
-				Update_Ack(&ack, 3, 0);
-				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
-				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-			}
-			break;
-		case CLOSE_NO4:
-			if (servos_activated) {
-				Update_Ack(&ack, 3, 1);
-				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
-				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
-			}
-			break;
-		case OPEN_PYRO:
-			if (servos_activated) {
-				Update_Ack(&ack, 2, 0);
-				servo_can_id = GET_SERVO_CAN_ID (pyro_board_uid, 1);
-				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-			}
-			break;
-		case CLOSE_PYRO:
-			if (servos_activated) {
-				Update_Ack(&ack, 2, 1);
-//				do nothing and let servo turn off
-//				bc pyro valve
-			}
-			break;
-		default:
-			break;
-	}
 
+
+
+// ** THIS CODE IS THE RIGHT ONE PLEASE KEEP IT, THE OTHER IS A ** //
+// ** SMALL TEMPORARY FIX, BECAUSE OF OTHER REASONS ** //
+
+//	switch (rx_buff[0]){
+//		case SIGNAL_ALL:
+//			FLASH_ALL (board_can_ids, NUM_BOARDS);
+//			break;
+//		case REPORT_ALL:
+//			// debugging option
+//			break;
+//		case ACTIVATE_SERVOS:
+//			servos_activated = 1;
+//			break;
+//		case DEACTIVATE_SERVOS:
+//			servos_activated = 0;
+//			break;
+//		case OPEN_NO2:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 5, 0);
+//				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
+//				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+//			}
+//			break;
+//		case CLOSE_NO2:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 5, 1);
+//				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
+//				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+//			}
+//			break;
+//		case OPEN_NO3:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 4, 0);
+//				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
+//				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+//			}
+//			break;
+//		case CLOSE_NO3:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 4, 1);
+//				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
+//				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+//			}
+//			break;
+//		case OPEN_NO4:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 3, 0);
+//				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
+//				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+//			}
+//			break;
+//		case CLOSE_NO4:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 3, 1);
+//				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
+//				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+//			}
+//			break;
+//		case OPEN_PYRO:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 2, 0);
+//				servo_can_id = GET_SERVO_CAN_ID (pyro_board_uid, 1);
+//				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+//			}
+//			break;
+//		case CLOSE_PYRO:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 2, 1);
+////				do nothing and let servo turn off
+////				bc pyro valve
+//			}
+//			break;
+//		default:
+//			break;
+//	}
+
+
+	  switch (rx_buff[0]){
+	  		case SIGNAL_ALL:
+	  			FLASH_ALL (board_can_ids, NUM_BOARDS);
+	  			break;
+	  		case REPORT_ALL:
+	  			// debugging option
+	  			break;
+	  		case ACTIVATE_SERVOS:
+	  			servos_activated = 1;
+	  			break;
+	  		case DEACTIVATE_SERVOS:
+	  			servos_activated = 0;
+	  			break;
+	  		case OPEN_NO2:
+	  			if (servos_activated) {
+	  				Update_Ack(&ack, 5, 0);
+	  				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
+	  				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+	  			}
+	  			break;
+	  		case CLOSE_NO2:
+	  			if (servos_activated) {
+	  				Update_Ack(&ack, 5, 1);
+	  				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
+	  				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+	  			}
+	  			break;
+	  		case OPEN_NO3:
+	  			if (servos_activated) {
+	  				Update_Ack(&ack, 4, 0);
+	  				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
+	  				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+	  			}
+	  			break;
+	  		case CLOSE_NO3:
+	  			if (servos_activated) {
+	  				Update_Ack(&ack, 4, 1);
+	  				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
+	  				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+	  			}
+	  			break;
+	  		case OPEN_NO4:
+	  			if (servos_activated) {
+	  				Update_Ack(&ack, 3, 0);
+	  				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
+	  				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+	  			}
+	  			break;
+	  		case CLOSE_NO4:
+	  			if (servos_activated) {
+	  				Update_Ack(&ack, 3, 1);
+	  				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
+	  				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+	  			}
+	  			break;
+	  		case OPEN_PYRO:
+	  			if (servos_activated) {
+	  				Update_Ack(&ack, 2, 0);
+	  				servo_can_id = GET_SERVO_CAN_ID (pyro_board_uid, 1);
+	  				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+	  			}
+	  			break;
+	  		case CLOSE_PYRO:
+	  			if (servos_activated) {
+	  				Update_Ack(&ack, 2, 1);
+	  //				do nothing and let servo turn offt`
+	  //				bc pyro valve
+	  			}
+	  			break;
+	  		default:
+	  			break;
+	  	}
+
+
+
+	// ** KEEP THIS IN THE FIX AND THE OLD VERSION OF THE SWITCH STATMENT
 	current = HAL_GetTick();
 	if (current - prev >= 150) {
 		tx_buff[0] = ack;
