@@ -1,3 +1,4 @@
+
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
@@ -17,10 +18,12 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+
 #include "main.h"
 #include "breakwire.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
 #include "stdbool.h"
 #include "config/config.h"
 #include "utils/board_utils.h"
@@ -29,9 +32,10 @@
 #include "config/servo_config.h"
 #include "config/heater_config.h"
 #include "config/thermo_config.h"
+#include "igniter.h"
+#include "config/igniter_config.h"
 
 /* USER CODE END Includes */
-
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
@@ -60,6 +64,17 @@ uint8_t data[LENGTH];
 bool servos_activated = 0;
 
 bool isAutoArmed = 0;
+// DEF FOR IGNITER
+
+bool            isCloseAll   = false;
+bool            isAborted    = false;
+bool            isStarted    = false;
+IgniterState_t  igniterState = IGNITER_INIT;
+
+PAD_CONTROLLER_STATE pcState = PC_AUTO_OFF;
+
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -98,20 +113,13 @@ void ACTUATE_SERVO(uint32_t ext_id, uint8_t servo_cmd) {
 	}
 }
 
-void PAD_CONTROLLER_SETUP_ROUTINE (uint32_t* board_can_ids, uint8_t numBoards){
-  STATUS_IND_Toggle();
-  STATUS_IND_Toggle();
-
-  FLASH_ALL (board_can_ids, numBoards);
-}
-
-// send a flash signal throguh all the boards]
+// send a flash signal throguh all the boards
 void FLASH_ALL (uint32_t* board_can_ids, uint8_t numBoards) {
   uint8_t short_board_id;
   uint32_t* board_uid;
 
   //0x01020600
-  for (int i = 0; i < numBoards; i++) {
+  for (int i = 0; i < GET_NUM_BOARD_CONFIGS(); i++) {
 	board_uid = GET_BOARD_UID_FROM_CAN_ID (board_can_ids[i]);
 	short_board_id = GET_SHORT_BOARD_ID (board_uid);
 	uint32_t ext_id = build_can_extended_id (SENDER_PAD_CONTROLLER, short_board_id, MSG_TYPE_FLASH_SIGNAL, 0x00);
@@ -120,6 +128,14 @@ void FLASH_ALL (uint32_t* board_can_ids, uint8_t numBoards) {
 		HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
 	}
   }
+}
+
+void PAD_CONTROLLER_SETUP_ROUTINE (uint32_t* board_can_ids, uint8_t numBoards){
+  STATUS_IND_Toggle();
+  HAL_Delay(500);
+  STATUS_IND_Toggle();
+
+  FLASH_ALL (board_can_ids, numBoards);
 }
 /* USER CODE END 0 */
 
@@ -184,24 +200,10 @@ int main(void)
   HAL_CAN_Start(&hcan1);
   /* USER CODE END 2 */
 
-
-
-while (1){
-	GPIO_PinState state1 = HAL_GPIO_ReadPin(CONT_PIN0_GPIO_Port, CONT_PIN0);
-	GPIO_PinState state2 = HAL_GPIO_ReadPin(CONT_PIN1_GPIO_Port, CONT_PIN1);
-	if (state1 == GPIO_PIN_RESET && state2 == GPIO_PIN_RESET)
-	{
-	    HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin);
-	}
-	else
-	{
-	    // Turn LED off
-	    HAL_GPIO_WritePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin, GPIO_PIN_RESET);
-	}
-
-}
   /* Infinite loop */
+
   /* USER CODE BEGIN WHILE */
+
 
   uint32_t* no2_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N02");
   uint32_t* no3_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N03");
@@ -230,103 +232,261 @@ while (1){
 
   ack = Create_Ack();
 
-  while (1)
-  {
-//	  enum COMMANDS {
-//	    SIGNAL_ALL = 0,  // previously OPEN_EO1 = 0,
-//	    REPORT_ALL = 1,  // previously CLOSE_EO1 = 1,
-//	  //  OPEN_NO6 = 2,
-//	  //  CLOSE_NO6 = 3,
-//	    OPEN_NO4 = 4,
-//	    CLOSE_NO4 = 5,
-//	    OPEN_NO3 = 6,
-//	    CLOSE_NO3 = 7,
-//	    START_1 = 8,
-//	    OPEN_NO2 = 9,
-//	    CLOSE_NO2 = 10,
-//	    CLOSE_ALL = 12,
-//	    DECLOSE_ALL = 13,
-//	    ACTIVATE_IGNITER = 14,
-//	    DEACTIVATE_IGNITER = 15,
-//	    ABORT = 16,
-//	    ACTIVATE_SERVOS = 17,
-//	    DEACTIVATE_SERVOS = 18,
-//	    DEABORT = 19,
-//	    CHECK_STATE = 20,
-//	    DESTART = 21,
-//	  };
-	// determine
-	switch (rx_buff[0]){
-		case SIGNAL_ALL:
-			FLASH_ALL (board_can_ids, NUM_BOARDS);
-			break;
-		case REPORT_ALL:
-			// debugging option
-			break;
-		case ACTIVATE_SERVOS:
-			servos_activated = 1;
-			break;
-		case DEACTIVATE_SERVOS:
-			servos_activated = 0;
-			break;
-		case OPEN_NO2:
-			if (servos_activated) {
-				Update_Ack(&ack, 5, 0);
-				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 0);
-				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-			}
-			break;
-		case CLOSE_NO2:
-			if (servos_activated) {
-				Update_Ack(&ack, 5, 1);
-				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 0);
-				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
-			}
-			break;
-		case OPEN_NO3:
-			if (servos_activated) {
-				Update_Ack(&ack, 4, 0);
-				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 0);
-				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-			}
-			break;
-		case CLOSE_NO3:
-			if (servos_activated) {
-				Update_Ack(&ack, 4, 1);
-				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 0);
-				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
-			}
-			break;
-		case OPEN_NO4:
-			if (servos_activated) {
-				Update_Ack(&ack, 3, 0);
-				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 0);
-				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-			}
-			break;
-		case CLOSE_NO4:
-			if (servos_activated) {
-				Update_Ack(&ack, 3, 1);
-				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 0);
-				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
-			}
-			break;
-		default:
-			break;
-	}
 
-	current = HAL_GetTick();
-	if (current - prev >= 150) {
-		tx_buff[0] = ack;
-		HAL_UART_Transmit_IT(&huart6, tx_buff, 1);
-		prev = current;
-	}
+  while (1)
+    {
+
+      // 1) PAD‑CONTROLLER STATE MACHINE
+
+      switch (pcState) {
+
+
+      case PC_AUTO_OFF:
+          // wait for the AUTO_ON command:
+          if (rx_buff[0] == AUTO_ON) {
+
+        	pcState = PC_AUTO_ON;
+            isAutoArmed = true;
+
+          }
+          break;
+
+      case PC_AUTO_ON:
+          // if switched back off, go back:
+          if (rx_buff[0] == AUTO_OFF) {
+
+            pcState = PC_AUTO_OFF;
+            isAutoArmed = false;
+            Tick_Igniter(DEACTIVATE_IGNITER);
+
+          }
+          // otherwise continuity must be present before igniting:
+          else if (Check_Breakwire() == GPIO_PIN_SET) {
+            pcState = PC_IGNITED;
+
+          }
+
+          else {
+            // no continuity -> safe fallback
+            pcState       = PC_AUTO_OFF;
+            isAutoArmed   = false;
+          }
+          break;
+
+      case PC_IGNITED:
+
+    	  // fire the igniter:
+    	  Tick_Igniter(ACTIVATE_IGNITER);
+          // once the wire breaks, wait then shut it off
+          if (Check_Breakwire() == GPIO_PIN_RESET) {
+            HAL_Delay(BREAKWIRE_OPEN_DELAY_MS);
+            Tick_Igniter(DEACTIVATE_IGNITER);
+            pcState       = PC_AUTO_OFF;
+            isAutoArmed   = false;
+          }
+          break;
+
+        default:  // PC_STARTUP
+          // on startup just drop into AUTO_OFF
+          pcState = PC_AUTO_OFF;
+          break;
+      }
+
+
+      // 2) BREAKWIRE LED FLASH
+
+      Tick_Breakwire_LED();
+
+      // 3) other RX‑based commands (servo, flash…)
+
+      switch (rx_buff[0]){
+
+      		case SIGNAL_ALL:
+      			FLASH_ALL (board_can_ids, NUM_BOARDS);
+      			break;
+      		case REPORT_ALL:
+      			// debugging option
+      			break;
+      		case ACTIVATE_SERVOS:
+      			servos_activated = 1;
+      			break;
+      		case DEACTIVATE_SERVOS:
+      			servos_activated = 0;
+      			break;
+      		case OPEN_NO2:
+      			if (servos_activated) {
+      				Update_Ack(&ack, 5, 0);
+      				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 0);
+      				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+      			}
+      			break;
+      		case CLOSE_NO2:
+      			if (servos_activated) {
+      				Update_Ack(&ack, 5, 1);
+      				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 0);
+      				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+      			}
+      			break;
+      		case OPEN_NO3:
+      			if (servos_activated) {
+      				Update_Ack(&ack, 4, 0);
+      				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 0);
+      				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+      			}
+      			break;
+      		case CLOSE_NO3:
+      			if (servos_activated) {
+      				Update_Ack(&ack, 4, 1);
+      				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 0);
+      				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+      			}
+      			break;
+      		case OPEN_NO4:
+      			if (servos_activated) {
+      				Update_Ack(&ack, 3, 0);
+      				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 0);
+      				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+      			}
+      			break;
+      		case CLOSE_NO4:
+      			if (servos_activated) {
+      				Update_Ack(&ack, 3, 1);
+      				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 0);
+      				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+      			}
+      			break;
+      		default:
+      			break;
+      	}
+
+      current = HAL_GetTick();
+      if (current - prev >= 150) {
+        tx_buff[0] = ack;
+        HAL_UART_Transmit_IT(&huart6, tx_buff, 1);
+        prev = current;
+      }
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    // (never reached)
+    /* USER CODE END 3 */
   }
-  /* USER CODE END 3 */
-}
+//  while (1)
+//  {
+////	  enum COMMANDS {
+////	    SIGNAL_ALL = 0,  // previously OPEN_EO1 = 0,
+////	    REPORT_ALL = 1,  // previously CLOSE_EO1 = 1,
+////	  //  OPEN_NO6 = 2,
+////	  //  CLOSE_NO6 = 3,
+////	    OPEN_NO4 = 4,
+////	    CLOSE_NO4 = 5,
+////	    OPEN_NO3 = 6,
+////	    CLOSE_NO3 = 7,
+////	    START_1 = 8,
+////	    OPEN_NO2 = 9,
+////	    CLOSE_NO2 = 10,
+////	    CLOSE_ALL = 12,
+////	    DECLOSE_ALL = 13,
+////	    ACTIVATE_IGNITER = 14,
+////	    DEACTIVATE_IGNITER = 15,
+////	    ABORT = 16,
+////	    ACTIVATE_SERVOS = 17,
+////	    DEACTIVATE_SERVOS = 18,
+////	    DEABORT = 19,
+////	    CHECK_STATE = 20,
+////	    DESTART = 21,
+////	  };
+//	// determine
+//	  HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin);
+//	  HAL_GPIO_TogglePin(PYRO_SW0_GPIO_Port, PYRO_SW0_Pin);
+//	  //        HAL_GPIO_TogglePin(PYRO_SW2_GPIO_Port, PYRO_SW2_Pin);
+//	  HAL_Delay(500);HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin);
+//      HAL_GPIO_TogglePin(PYRO_SW0_GPIO_Port, PYRO_SW0_Pin);
+////        HAL_GPIO_TogglePin(PYRO_SW2_GPIO_Port, PYRO_SW2_Pin);
+//      HAL_Delay(500);
+//	switch (rx_buff[0]){
+//
+//		case ACTIVATE_IGNITER:
+//	            Tick_Igniter(ACTIVATE_IGNITER);
+//	            break;
+//	    case DEACTIVATE_IGNITER:
+//	            Tick_Igniter(DEACTIVATE_IGNITER);
+//	            break;
+//	    case ABORT:
+//	            Tick_Igniter(ABORT);
+//	        break;
+//
+//		case SIGNAL_ALL:
+//			FLASH_ALL (board_can_ids, NUM_BOARDS);
+//			break;
+//		case REPORT_ALL:
+//			// debugging option
+//			break;
+//		case ACTIVATE_SERVOS:
+//			servos_activated = 1;
+//			break;
+//		case DEACTIVATE_SERVOS:
+//			servos_activated = 0;
+//			break;
+//		case OPEN_NO2:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 5, 0);
+//				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 0);
+//				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+//			}
+//			break;
+//		case CLOSE_NO2:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 5, 1);
+//				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 0);
+//				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+//			}
+//			break;
+//		case OPEN_NO3:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 4, 0);
+//				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 0);
+//				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+//			}
+//			break;
+//		case CLOSE_NO3:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 4, 1);
+//				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 0);
+//				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+//			}
+//			break;
+//		case OPEN_NO4:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 3, 0);
+//				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 0);
+//				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+//			}
+//			break;
+//		case CLOSE_NO4:
+//			if (servos_activated) {
+//				Update_Ack(&ack, 3, 1);
+//				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 0);
+//				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+//			}
+//			break;
+//		default:
+//			break;
+//	}
+//
+//	current = HAL_GetTick();
+//	if (current - prev >= 150) {
+//		tx_buff[0] = ack;
+//		HAL_UART_Transmit_IT(&huart6, tx_buff, 1);
+//		prev = current;
+//	}
+//    /* USER CODE END WHILE */
+//
+//    /* USER CODE BEGIN 3 */
+//  }
+//  /* USER CODE END 3 */
+//}
 
 /**
   * @brief System Clock Configuration
@@ -457,6 +617,9 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin, GPIO_PIN_RESET);
+  //igniter emmanuel:
+  /*Configure GPIO pin Output Level */
+    HAL_GPIO_WritePin(GPIOB, PYRO_SW0_Pin|PYRO_SW1_Pin|PYRO_SW2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : STATUS_IND_Pin */
   GPIO_InitStruct.Pin = STATUS_IND_Pin;
@@ -464,6 +627,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(STATUS_IND_GPIO_Port, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = PYRO_SW0_Pin|PYRO_SW1_Pin|PYRO_SW2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -531,3 +700,4 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+

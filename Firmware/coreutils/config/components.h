@@ -13,6 +13,7 @@
 #include "heater_config.h"
 #include "servo_config.h"
 #include "pt_config.h"
+#include "board_config.h"
 
 // BoardID is acquired from the F042Diagnostic. Use debugger to see values inside uid variable after board id is acquired.
 
@@ -60,31 +61,44 @@
 
 // BoardID, CAN_ID, NAME, OPEN_ANGLE, CLOSED_ANGLE, UPDATE_FREQUENCY
 ServoConfig servo_lookup_table[] = {
-	{{0x00390043, 0x48585311, 0x20373733}, 0x00010108, "FV-N02", 0, 135, -1},
-	{{0x0032002D, 0x48585314, 0x20373733}, 0x00020108, "FV-N03", 0, 135, -1},
-	{{0x00310043, 0x48585311, 0x20373733}, 0x00030108, "FV-N04", 0, 135, -1},
+	{{0x00390043, 0x48585311, 0x20373733}, 0x02010108, "FV-N02", 0, 135, -1},
+	{{0x0032002D, 0x48585314, 0x20373733}, 0x02020108, "FV-N03", 0, 135, -1},
+	{{0x00310043, 0x48585311, 0x20373733}, 0x02030108, "FV-N04", 0, 135, -1},
 	{{0x003a0042, 0x48585311, 0x20373733}, 0x00040108, "FV-PYRO", 0, 135, -1}
 };
 
 // BoardID, CAN_ID (29 bits), NAME, OPEN_ANGLE, CLOSED_ANGLE, UPDATE_FREQUENCY
 ThermoConfig thermo_lookup_table[] = {
-    {{0x00390043, 0x48585311, 0x20373733}, 0x00010208, "TC-02", 100},
-    {{0x0032002D, 0x48585314, 0x20373733}, 0x00020208, "TC-03", 100},
-	{{0x00310043, 0x48585311, 0x20373733}, 0x00030208, "TC-04", 100},
+    {{0x00390043, 0x48585311, 0x20373733}, 0x02010208, "TC-02", 100},
+    {{0x0032002D, 0x48585314, 0x20373733}, 0x02020208, "TC-03", 100},
+	{{0x00310043, 0x48585311, 0x20373733}, 0x02030208, "TC-04", 100},
 	{{0x003a0042, 0x48585311, 0x20373733}, 0x00040208, "TC-05", 100}
 };
 
 // BoardID, CAN_ID (29 bits), NAME, OPEN_ANGLE, CLOSED_ANGLE, UPDATE_FREQUENCY
 HeaterConfig heater_lookup_table[] = {
-	{{0x00390043, 0x48585311, 0x20373733}, 0x00010408, "H-02", 30, 25, 100},
-	{{0x0032002D, 0x48585314, 0x20373733}, 0x00020408, "H-03", 29, 27, 100},
-	{{0x00310043, 0x48585311, 0x20373733}, 0x00030408, "H-04", 29, 27, 100},
+	{{0x00390043, 0x48585311, 0x20373733}, 0x02010408, "H-02", 30, 25, 100},
+	{{0x0032002D, 0x48585314, 0x20373733}, 0x02020408, "H-03", 29, 27, 100},
+	{{0x00310043, 0x48585311, 0x20373733}, 0x02030408, "H-04", 29, 27, 100},
 	{{0x003a0042, 0x48585311, 0x20373733}, 0x00040408, "H-05", 29, 27, 100}
 };
 
 // BoardID, CAN_ID, NAME, FREQUENCY, GAIN, OFFSET
 PtConfig pt_lookup_table[] = {
-	{{0x002b002c, 0x48585314, 0x20373733}, 0x00110308, "PT-01", 0, 0, 100}
+	{{0x002b002c, 0x48585314, 0x20373733}, 0x00110308, "PT-01", 100, 0, 100, 'A'},
+	{{0x002b002c, 0x48585314, 0x20373733}, 0x00110310, "PT-02", 5000, 0, 100, 'B'},
+	{{0x0032001e, 0x46304317, 0x200003e0}, 0x00120308, "PT-03", 5000, 0, 100, 'B'},
+	{{0x0032001e, 0x46304317, 0x200003e0}, 0x00110310, "PT-04", 100, 0, 100, 'A'}
+
+};
+
+BoardConfig board_lookup_table[] = {
+		{{0x00390043, 0x48585311, 0x20373733}, 0x01, "DONATELLO", "FV-NO2"},
+		{{0x0032002D, 0x48585314, 0x20373733}, 0x02, "LEONARDO", "FV-NO3"},
+		{{0x00310043, 0x48585311, 0x20373733}, 0x03, "MICHELANGELO", "FV-NO4"},
+		{{0x003a0042, 0x48585311, 0x20373733}, 0x04, "RAPHAEL", "FV-PYRO"},
+		{{0x002b002c, 0x48585314, 0x20373733}, 0x11, "SPLINTER", "PT-PLACEHOLDER-1"},
+		{{0x0032001e, 0x46304317, 0x200003e0}, 0x12, "APRIL", "PT-PLACEHOLDER-2"}
 };
 
 ServoConfig* GET_SERVO_CONFIGS() {
@@ -103,6 +117,9 @@ PtConfig* GET_PT_CONFIGS() {
 	return pt_lookup_table;
 }
 
+BoardConfig* GET_BOARD_CONFIGS() {
+	return board_lookup_table;
+}
 
 size_t GET_NUM_SERVO_CONFIGS() {
     return sizeof(servo_lookup_table) / sizeof(ServoConfig);
@@ -118,6 +135,10 @@ size_t GET_NUM_HEATER_CONFIGS() {
 
 size_t GET_NUM_PT_CONFIGS() {
 	return sizeof(pt_lookup_table) / sizeof(PtConfig);
+}
+
+size_t GET_NUM_BOARD_CONFIGS() {
+	return sizeof(board_lookup_table) / sizeof(BoardConfig);
 }
 
 
@@ -154,6 +175,7 @@ PtConfig* GET_PT_CONFIG(const uint32_t can_id) {
 			return &pt_lookup_table[i];
 		}
 	}
+	return NULL; // Return NULL if no match is found
 }
 
 
@@ -161,10 +183,9 @@ PtConfig* GET_PT_CONFIG(const uint32_t can_id) {
 uint32_t GET_SERVO_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 	for (int i = 0; i < sizeof(servo_lookup_table) / sizeof(ServoConfig); i++) {
 		if (memcmp(board_uid, servo_lookup_table[i].board_uid, sizeof(servo_lookup_table[i].board_uid)) == 0) {
-			if (instance == 0) {
+			if (instance == ((servo_lookup_table[i].can_id >> 3) & 0x1F)) {
 				return servo_lookup_table[i].can_id;
 			}
-			instance--;
 		}
 	}
 	return -1;
@@ -173,7 +194,7 @@ uint32_t GET_SERVO_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 uint32_t GET_THERMO_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 	for (int i = 0; i < sizeof(thermo_lookup_table) / sizeof(ThermoConfig); i++) {
 		if (memcmp(board_uid, thermo_lookup_table[i].board_uid, sizeof(thermo_lookup_table[i].board_uid)) == 0) {
-			if (instance == 0) {
+			if (instance == ((servo_lookup_table[i].can_id >> 3) & 0x1F)) {
 				return thermo_lookup_table[i].can_id;
 			}
 			instance--;
@@ -185,10 +206,9 @@ uint32_t GET_THERMO_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 uint32_t GET_HEATER_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 	for (int i = 0; i < sizeof(heater_lookup_table) / sizeof(HeaterConfig); i++) {
 		if (memcmp(board_uid, heater_lookup_table[i].board_uid, sizeof(heater_lookup_table[i].board_uid)) == 0) {
-			if (instance == 0) {
+			if (instance == ((servo_lookup_table[i].can_id >> 3) & 0x1F)) {
 				return heater_lookup_table[i].can_id;
 			}
-			instance--;
 		}
 	}
 	return -1;
@@ -197,10 +217,9 @@ uint32_t GET_HEATER_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 uint32_t GET_PT_CAN_ID(const uint32_t* board_uid, uint8_t instance) {
 	for (int i = 0; i < sizeof(pt_lookup_table) / sizeof(PtConfig); i++) {
 		if (memcmp(board_uid, pt_lookup_table[i].board_uid, sizeof(pt_lookup_table[i].board_uid)) == 0) {
-			if (instance == 0) {
+			if (instance == ((pt_lookup_table[i].can_id >> 3) & 0x1F)) {
 				return pt_lookup_table[i].can_id;
 			}
-			instance--;
 		}
 	}
 	return -1;

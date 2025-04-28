@@ -47,6 +47,7 @@ static inline void Tick_Breakwire_LED(void) {
         if (isAutoArmed) {
             // If auto armed, turn LED on solid.
             Breakwire_LED_On();
+
         } else {
             // If not armed, flash the LED.
             uint64_t curr_time = HAL_GetTick() % LED_FLASH_TIME_MS;

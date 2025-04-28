@@ -17,7 +17,9 @@ typedef struct {
     uint16_t frequency;
     float gain;
     float offset;
+    char port;
 } PtConfig;
+
 
 typedef enum {
 	PRES_WAIT = 0,
