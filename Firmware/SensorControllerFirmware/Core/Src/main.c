@@ -69,6 +69,19 @@ volatile uint8_t adc_read_cplt = 0;
 uint32_t board_id[3];
 static uint8_t short_board_id;
 bool flash_signal_cmd = 0;
+bool adc_reading = false;
+bool port_a_read_cplt = false;
+bool port_b_read_cplt = false;
+bool send_port_a = false;
+bool send_port_b = false;
+float port_a_val = 0.0f;
+float port_b_val = 0.0f;
+uint16_t port_a_config = (ADS1118_CONFIG_DEFAULT | (0b111 << ADS1118_CONFIG_BIT_MUX) | (1 << ADS1118_CONFIG_BIT_SS) | (0b000 << 9)) & 0xFBFF;
+uint16_t port_b_config = (ADS1118_CONFIG_DEFAULT | (0b101 << ADS1118_CONFIG_BIT_MUX) | (1 << ADS1118_CONFIG_BIT_SS) | (0b000 << 9)) & 0xFBFF;
+uint16_t port_a_rx_buf[] = {0, 0};
+uint16_t port_b_rx_buf[] = {0, 0};
+float v_fs = 6.144f;
+uint8_t tx_data[8];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -80,6 +93,11 @@ static void MX_SPI1_Init(void);
 static void MX_TIM14_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
+
+static void GET_PORT_A_READING(uint16_t config);
+static void GET_PORT_B_READING(uint16_t config);
+static float CONVERT_ADC_READING(PtConfig *pt, int16_t raw_val);
+static void INSERT_FLOAT_TO_TX_DATA(float val);
 /* USER CODE BEGIN PFP */
 uint32_t frequency_to_period_ms(uint32_t frequency);
 /* USER CODE END PFP */
@@ -170,8 +188,6 @@ int main(void)
     STATUS_IND_Toggle();
 
   // Configure ADC
-  uint16_t port_a_config = (ADS1118_CONFIG_DEFAULT | (0b111 << ADS1118_CONFIG_BIT_MUX) | (1 << ADS1118_CONFIG_BIT_SS) | (0b000 << 9)) & 0xFBFF;
-  uint16_t port_b_config = (ADS1118_CONFIG_DEFAULT | (0b101 << ADS1118_CONFIG_BIT_MUX) | (1 << ADS1118_CONFIG_BIT_SS) | (0b000 << 9)) & 0xFBFF;
   adc.hspi = &hspi1;
   adc.cs_gpio_port = ADC_CS_GPIO_Port;
   adc.cs_pin = ADC_CS_Pin;
@@ -228,17 +244,16 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  int16_t buf[] = { 0, 0 };
-  float v_fs = 6.144f;
-  float res = 0.0f;
+//  int16_t buf[] = { 0, 0 };
+//  float res = 0.0f;
 
-  while (1)
+ while (1)
   {
 //      if (adc_read_cplt && (!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4))) {
 //    	  // Update ADC config readback
 //    	  adc.config_readback = buf[1];
 //
-//    	  // Send measurement over CAN
+//    	   Send measurement over CAN
 //          res = (v_fs/(0x7FFF))*(float)buf[0]; // Convert from ADC output to voltage
 //          res = 251.493315f * res - 122.744008;
 //          send_can_msg((uint8_t*)(&res), sizeof(res));
@@ -255,8 +270,22 @@ int main(void)
 //         start_read_adc = 0;
 //      }
 
+	 GET_PORT_A_READING(port_a_config);
+	 GET_PORT_B_READING(port_b_config);
 	  if (flash_signal_cmd) {
 		  flash_signal_cmd = Tick_SIGNAL(flash_signal_cmd);
+	  }
+	  if (send_port_a) {
+		  float data = CONVERT_ADC_READING(PT_A, port_a_val);
+		  INSERT_FLOAT_TO_TX_DATA(data);
+		  send_can_msg(pt_1_can_id, tx_data, sizeof(data), &hcan);
+		  send_port_a = false;
+	  }
+	  if (send_port_b) {
+		  float data = CONVERT_ADC_READING(PT_B, port_b_val);
+		  INSERT_FLOAT_TO_TX_DATA(data);
+		  send_can_msg(pt_1_can_id, tx_data, sizeof(data), &hcan);
+		  send_port_b = false;
 	  }
     /* USER CODE END WHILE */
 
@@ -584,38 +613,51 @@ float temperature_code_to_temperature(int16_t temperature_code) {
 //}
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
-	adc_read_cplt = 1;
+	if (adc.config == port_a_config) {
+		port_a_val = port_a_rx_buf[0];
+		adc_reading = false;
+		port_a_read_cplt = true;
+	}
+	if (adc.config == port_b_config) {
+		port_b_val = port_b_rx_buf[0];
+		adc_reading = false;
+		port_b_read_cplt = true;
+	}
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
-	if (htim->Instance == TIM14) {
-		start_read_adc = 1;
-		//    should_read_adc = 1;
-
-		//    float out[2];
-		//    uint32_t buf;
-
-		//    buf = HAL_ADC_GetValue(&hadc);
-		//    out[TS_MCU] = __LL_ADC_CALC_TEMPERATURE(3300, buf, LL_ADC_RESOLUTION_12B);
-
-		//  uint16_t adc_config = ADS1118_CONFIG_DEFAULT | (0b100 << ADS1118_CONFIG_BIT_MUX) | (1 << ADS1118_CONFIG_BIT_SS);
-		//    if (Ads1118_Transmit(&adc_config, &hspi1, &buf, 1000) != HAL_OK) {
-		//        Error_Handler();
-		//    }
-		//    out[TS_ADC] = temperature_code_to_temperature(buf);
-
-		//    send_can_msg((uint8_t*)(&buf), 4);
-	}
+//	if (htim->Instance == TIM14) {
+//		start_read_adc = 1;
+//		    should_read_adc = 1;
+//
+//		    float out[2];
+//		    uint32_t buf;
+//
+//		    buf = HAL_ADC_GetValue(&hadc);
+//		    out[TS_MCU] = __LL_ADC_CALC_TEMPERATURE(3300, buf, LL_ADC_RESOLUTION_12B);
+//
+//		  uint16_t adc_config = ADS1118_CONFIG_DEFAULT | (0b100 << ADS1118_CONFIG_BIT_MUX) | (1 << ADS1118_CONFIG_BIT_SS);
+//		    if (Ads1118_Transmit(&adc_config, &hspi1, &buf, 1000) != HAL_OK) {
+//		        Error_Handler();
+//		    }
+//		    out[TS_ADC] = temperature_code_to_temperature(buf);
+//
+//		    send_can_msg((uint8_t*)(&buf), 4);
+//	}
 	if (htim->Instance == TIM2) {
 //		Handle PT_A timer interrupt
-		volatile uint32_t ticks = HAL_GetTick();
-//		STATUS_IND_Toggle();
+		if (port_a_read_cplt) {
+			send_port_a = true;
+			port_a_read_cplt =  false;
+		}
 	}
 	if (htim->Instance == TIM3) {
 //		Handle PT_B timer interrupt
-		volatile uint32_t ticks = HAL_GetTick();
-//		STATUS_IND_Toggle();
+		if (port_b_read_cplt) {
+			send_port_b = true;
+			port_b_read_cplt =  false;
+		}
 	}
 
 }
@@ -657,6 +699,37 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
 uint32_t frequency_to_period_ms(uint32_t frequency) {
 	return (uint32_t)((1.0f / frequency) * 1000);
+}
+
+static void GET_PORT_A_READING(uint16_t config) {
+	if (!adc_reading) {
+		adc_reading = true;
+		adc.config = config;
+		Ads1118_Configure(&adc);
+		if (Ads1118_Transmit(&adc, port_a_rx_buf) != HAL_OK) {
+			Error_Handler();
+		}
+	}
+}
+static void GET_PORT_B_READING(uint16_t config) {
+	if (!adc_reading) {
+		adc_reading = true;
+		adc.config = config;
+		Ads1118_Configure(&adc);
+		if (Ads1118_Transmit(&adc, port_b_rx_buf) != HAL_OK) {
+			Error_Handler();
+		}
+	}
+}
+
+static float CONVERT_ADC_READING(PtConfig *pt, int16_t raw_val) {
+	float voltage = (v_fs/(0x7FFF))*(float)raw_val;
+	float unscaled_val = ((voltage / v_fs) * (pt->max_val - pt->min_val)) + pt->min_val;
+	return (unscaled_val * pt->gain) + pt->offset;
+}
+
+static void INSERT_FLOAT_TO_TX_DATA(float val) {
+	memcpy(&tx_data, &val, sizeof(val));
 }
 /* USER CODE END 4 */
 

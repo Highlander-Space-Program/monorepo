@@ -53,7 +53,7 @@ HAL_StatusTypeDef Ads1118_Configure(Ads1118TypeDef *adc) {
 	return status;
 }
 
-HAL_StatusTypeDef Ads1118_Transmit(Ads1118TypeDef *adc, uint32_t *data) {
+HAL_StatusTypeDef Ads1118_Transmit(Ads1118TypeDef *adc, uint16_t *data) {
     uint32_t out = adc->config | (((uint32_t)adc->config)<<16); // Transmit 16 bit config twice for a 32 bit transmission sequence
     HAL_StatusTypeDef status = HAL_SPI_TransmitReceive_DMA(adc->hspi, (uint8_t*)&out, (uint8_t*)data, ADS1118_SPI_SIZE);
     if (status != HAL_OK) {

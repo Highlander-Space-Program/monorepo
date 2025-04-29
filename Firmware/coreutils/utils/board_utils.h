@@ -37,8 +37,6 @@
 static uint32_t flash_timer = 0;
 static uint32_t previous_flash = 0;
 
-static uint32_t tick = -1;
-
 void STARTUP() {
 
 }
