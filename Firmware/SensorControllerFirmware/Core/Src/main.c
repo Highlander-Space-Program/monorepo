@@ -80,7 +80,8 @@ uint16_t port_a_config = (ADS1118_CONFIG_DEFAULT | (0b111 << ADS1118_CONFIG_BIT_
 uint16_t port_b_config = (ADS1118_CONFIG_DEFAULT | (0b101 << ADS1118_CONFIG_BIT_MUX) | (1 << ADS1118_CONFIG_BIT_SS) | (0b000 << 9)) & 0xFBFF;
 uint16_t port_a_rx_buf[] = {0, 0};
 uint16_t port_b_rx_buf[] = {0, 0};
-float v_fs = 6.144f;
+float v_fs = 5.0f;
+float v_range = 4.5f;
 uint8_t tx_data[8];
 /* USER CODE END PV */
 
@@ -284,7 +285,7 @@ int main(void)
 	  if (send_port_b) {
 		  float data = CONVERT_ADC_READING(PT_B, port_b_val);
 		  INSERT_FLOAT_TO_TX_DATA(data);
-		  send_can_msg(pt_1_can_id, tx_data, sizeof(data), &hcan);
+		  send_can_msg(pt_2_can_id, tx_data, sizeof(data), &hcan);
 		  send_port_b = false;
 	  }
     /* USER CODE END WHILE */
@@ -724,7 +725,7 @@ static void GET_PORT_B_READING(uint16_t config) {
 
 static float CONVERT_ADC_READING(PtConfig *pt, int16_t raw_val) {
 	float voltage = (v_fs/(0x7FFF))*(float)raw_val;
-	float unscaled_val = ((voltage / v_fs) * (pt->max_val - pt->min_val)) + pt->min_val;
+	float unscaled_val = (((voltage - 0.5f) / v_range) * (pt->max_val - pt->min_val)) + pt->min_val;
 	return (unscaled_val * pt->gain) + pt->offset;
 }
 
