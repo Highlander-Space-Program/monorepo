@@ -27,8 +27,8 @@ typedef enum {
 } SERVO_STATE;
 
 typedef enum {
-	OPEN_SERVO = 0,
-	CLOSE_SERVO = 1,
+	CLOSE_SERVO = 0,
+	OPEN_SERVO = 1,
 } SERVO_CMD;
 
 #endif /* INC_COREUTILS_CONFIG_SERVO_CONFIG_H_ */

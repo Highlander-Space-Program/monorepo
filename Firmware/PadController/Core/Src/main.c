@@ -29,7 +29,8 @@
 #include "config/servo_config.h"
 #include "config/heater_config.h"
 #include "config/thermo_config.h"
-
+#include "PC_state.h"
+#include "igniter.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -39,7 +40,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define LENGTH 8
 #define NUM_BOARDS 5
 /* USER CODE END PD */
 
@@ -55,7 +55,6 @@ UART_HandleTypeDef huart6;
 
 /* USER CODE BEGIN PV */
 uint32_t board_uid[3];
-uint8_t data[LENGTH];
 bool servos_activated = 0;
 /* USER CODE END PV */
 
@@ -85,32 +84,6 @@ static void MX_USART6_UART_Init(void);
 //	    HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
 //	}
 //}
-
-// 0 is open 1 is close for servo_cmd. see SERVO_CMD in servo_state_machine.h
-void ACTUATE_SERVO(uint32_t ext_id, uint8_t servo_cmd) {
-	data [0] = servo_cmd;
-	HAL_StatusTypeDef status = send_can_msg(ext_id, data, LENGTH, &hcan1);
-	if (status != HAL_OK) {
-	    HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
-	}
-}
-
-// send a flash signal throguh all the boards
-void FLASH_ALL (uint32_t* board_can_ids, uint8_t numBoards) {
-  uint8_t short_board_id;
-  uint32_t* board_uid;
-
-  //0x01020600
-  for (int i = 0; i < GET_NUM_BOARD_CONFIGS(); i++) {
-	board_uid = GET_BOARD_UID_FROM_CAN_ID (board_can_ids[i]);
-	short_board_id = GET_SHORT_BOARD_ID (board_uid);
-	uint32_t ext_id = build_can_extended_id (SENDER_PAD_CONTROLLER, short_board_id, MSG_TYPE_FLASH_SIGNAL, 0x00);
-	HAL_StatusTypeDef status = send_can_msg(ext_id, data, LENGTH, &hcan1);
-	if (status != HAL_OK) {
-		HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
-	}
-  }
-}
 
 void PAD_CONTROLLER_SETUP_ROUTINE (uint32_t* board_can_ids, uint8_t numBoards){
   STATUS_IND_Toggle();
@@ -211,7 +184,7 @@ int main(void)
   uint32_t thermo_can_id;
 
   ack = Create_Ack();
-
+  rx_buff[0] = 0x02;
   while (1)
   {
 //	  enum COMMANDS {
@@ -226,8 +199,8 @@ int main(void)
 //	    START_1 = 8,
 //	    OPEN_NO2 = 9,
 //	    CLOSE_NO2 = 10,
-//	    CLOSE_ALL = 12,
-//	    DECLOSE_ALL = 13,
+//	    AUTO_ON = 12,
+//	    AUTO_OFF = 13,
 //	    ACTIVATE_IGNITER = 14,
 //	    DEACTIVATE_IGNITER = 15,
 //	    ABORT = 16,
@@ -239,165 +212,92 @@ int main(void)
 //	  };
 	// determine
 
-
-
-// ** THIS CODE IS THE RIGHT ONE PLEASE KEEP IT, THE OTHER IS A ** //
-// ** SMALL TEMPORARY FIX, BECAUSE OF OTHER REASONS ** //
-
-//	switch (rx_buff[0]){
-//		case SIGNAL_ALL:
+	Tick_Igniter(rx_buff[0],&ack);
+	PadController_Tick(rx_buff[0],pyro_board_uid,&ack);
+	Tick_Breakwire_LED();
+	FLASH_ALL (board_can_ids, NUM_BOARDS);
+	switch (rx_buff[0]){
+		case SIGNAL_ALL:
 //			FLASH_ALL (board_can_ids, NUM_BOARDS);
-//			break;
-//		case REPORT_ALL:
-//			// debugging option
-//			break;
-//		case ACTIVATE_SERVOS:
-//			servos_activated = 1;
-//			break;
-//		case DEACTIVATE_SERVOS:
-//			servos_activated = 0;
-//			break;
-//		case OPEN_NO2:
-//			if (servos_activated) {
-//				Update_Ack(&ack, 5, 0);
-//				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
-//				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-//			}
-//			break;
-//		case CLOSE_NO2:
-//			if (servos_activated) {
-//				Update_Ack(&ack, 5, 1);
-//				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
-//				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
-//			}
-//			break;
-//		case OPEN_NO3:
-//			if (servos_activated) {
-//				Update_Ack(&ack, 4, 0);
-//				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
-//				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-//			}
-//			break;
-//		case CLOSE_NO3:
-//			if (servos_activated) {
-//				Update_Ack(&ack, 4, 1);
-//				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
-//				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
-//			}
-//			break;
-//		case OPEN_NO4:
-//			if (servos_activated) {
-//				Update_Ack(&ack, 3, 0);
-//				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
-//				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-//			}
-//			break;
-//		case CLOSE_NO4:
-//			if (servos_activated) {
-//				Update_Ack(&ack, 3, 1);
-//				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
-//				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
-//			}
-//			break;
-//		case OPEN_PYRO:
-//			if (servos_activated) {
-//				Update_Ack(&ack, 2, 0);
-//				servo_can_id = GET_SERVO_CAN_ID (pyro_board_uid, 1);
-//				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-//			}
-//			break;
-//		case CLOSE_PYRO:
-//			if (servos_activated) {
-//				Update_Ack(&ack, 2, 1);
-////				do nothing and let servo turn off
-////				bc pyro valve
-//			}
-//			break;
-//		default:
-//			break;
-//	}
-
-
-	  switch (rx_buff[0]){
-	  		case SIGNAL_ALL:
-	  			FLASH_ALL (board_can_ids, NUM_BOARDS);
-	  			break;
-	  		case REPORT_ALL:
-	  			// debugging option
-	  			break;
-	  		case ACTIVATE_SERVOS:
-	  			servos_activated = 1;
-	  			break;
-	  		case DEACTIVATE_SERVOS:
-	  			servos_activated = 0;
-	  			break;
-	  		case OPEN_NO2:
-	  			if (servos_activated) {
-	  				Update_Ack(&ack, 5, 0);
-	  				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
-	  				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
-	  			}
-	  			break;
-	  		case CLOSE_NO2:
-	  			if (servos_activated) {
-	  				Update_Ack(&ack, 5, 1);
-	  				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
-	  				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-	  			}
-	  			break;
-	  		case OPEN_NO3:
-	  			if (servos_activated) {
-	  				Update_Ack(&ack, 4, 0);
-	  				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
-	  				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
-	  			}
-	  			break;
-	  		case CLOSE_NO3:
-	  			if (servos_activated) {
-	  				Update_Ack(&ack, 4, 1);
-	  				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
-	  				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-	  			}
-	  			break;
-	  		case OPEN_NO4:
-	  			if (servos_activated) {
-	  				Update_Ack(&ack, 3, 0);
-	  				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
-	  				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
-	  			}
-	  			break;
-	  		case CLOSE_NO4:
-	  			if (servos_activated) {
-	  				Update_Ack(&ack, 3, 1);
-	  				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
-	  				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-	  			}
-	  			break;
-	  		case OPEN_PYRO:
-	  			if (servos_activated) {
-	  				Update_Ack(&ack, 2, 0);
-	  				servo_can_id = GET_SERVO_CAN_ID (pyro_board_uid, 1);
-	  				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
-	  			}
-	  			break;
-	  		case CLOSE_PYRO:
-	  			if (servos_activated) {
-	  				Update_Ack(&ack, 2, 1);
-	  //				do nothing and let servo turn offt`
-	  //				bc pyro valve
-	  			}
-	  			break;
-	  		default:
-	  			break;
-	  	}
-
+			break;
+		case REPORT_ALL:
+			// debugging option
+			break;
+		case ACTIVATE_SERVOS:
+			servos_activated = 1;
+//			rx_buff[0] = 0x02;
+			break;
+		case DEACTIVATE_SERVOS:
+			servos_activated = 0;
+//			rx_buff[0] = 0x02;
+			break;
+		case OPEN_NO2:
+			if (servos_activated) {
+				Update_Ack(&ack, 5, 0);
+				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
+				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+			}
+			break;
+		case CLOSE_NO2:
+			if (servos_activated) {
+				Update_Ack(&ack, 5, 1);
+				servo_can_id = GET_SERVO_CAN_ID (no2_board_uid, 1);
+				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+			}
+			break;
+		case OPEN_NO3:
+			if (servos_activated) {
+				Update_Ack(&ack, 4, 0);
+				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
+				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+			}
+			break;
+		case CLOSE_NO3:
+			if (servos_activated) {
+				Update_Ack(&ack, 4, 1);
+				servo_can_id = GET_SERVO_CAN_ID (no3_board_uid, 1);
+				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+			}
+			break;
+		case OPEN_NO4:
+			if (servos_activated) {
+				Update_Ack(&ack, 3, 0);
+				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
+				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+			}
+			break;
+		case CLOSE_NO4:
+			if (servos_activated) {
+				Update_Ack(&ack, 3, 1);
+				servo_can_id = GET_SERVO_CAN_ID (no4_board_uid, 1);
+				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+			}
+			break;
+		case OPEN_PYRO:
+			if (servos_activated) {
+				Update_Ack(&ack, 1, 0);
+				servo_can_id = GET_SERVO_CAN_ID (pyro_board_uid, 1);
+				ACTUATE_SERVO(servo_can_id, OPEN_SERVO);
+			}
+			break;
+		case CLOSE_PYRO:
+			if (servos_activated) {
+				Update_Ack(&ack, 1, 1);
+				servo_can_id = GET_SERVO_CAN_ID (pyro_board_uid, 1);
+				ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
+			}
+			break;
+		default:
+			break;
+	}
 
 
 	// ** KEEP THIS IN THE FIX AND THE OLD VERSION OF THE SWITCH STATMENT
 	current = HAL_GetTick();
-	if (current - prev >= 150) {
+	if (current - prev >= 300) {
 		tx_buff[0] = ack;
-		HAL_UART_Transmit_IT(&huart6, tx_buff, 1);
+//		HAL_UART_Transmit_IT(&huart6, tx_buff, 1);
+		HAL_UART_Transmit(&huart6, tx_buff, 1, 100);
 		prev = current;
 	}
     /* USER CODE END WHILE */
@@ -537,12 +437,34 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, BRK_CONT_LED_SINK_Pin|BRK_CONT_LED_Pin|IGNITER_Pin|BRK_CONT_SINK_Pin, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : STATUS_IND_Pin */
   GPIO_InitStruct.Pin = STATUS_IND_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(STATUS_IND_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : IGNITER_CONT_Pin */
+  GPIO_InitStruct.Pin = IGNITER_CONT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(IGNITER_CONT_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : BRK_CONT_LED_SINK_Pin BRK_CONT_LED_Pin IGNITER_Pin BRK_CONT_SINK_Pin */
+  GPIO_InitStruct.Pin = BRK_CONT_LED_SINK_Pin|BRK_CONT_LED_Pin|IGNITER_Pin|BRK_CONT_SINK_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : BRK_CONT_Pin */
+  GPIO_InitStruct.Pin = BRK_CONT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BRK_CONT_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -551,8 +473,18 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    HAL_UART_Receive_IT(&huart6, rx_buff, 1);
+   HAL_UART_Receive_IT(&huart6, rx_buff, 1);
    STATUS_IND_Toggle();
+   switch (rx_buff[0]){
+	  case ACTIVATE_SERVOS:
+		  servos_activated = 1;
+		  break;
+	  case DEACTIVATE_SERVOS:
+   		  servos_activated = 0;
+		  break;
+	  default:
+		  break;
+   }
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)

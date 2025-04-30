@@ -194,5 +194,6 @@ Message Brandon Marcus
 To make a new project within the monorepo, make a new project in stm32.
 Right click the project name, then go to Properties > C/C++ General > Paths and Symbols > Includes, then click add, and add ${workspace_loc}/Firmware/coreutils
 This allows you to use the coreutils.
+To actually see the coreutils, right click the project name, then go to New > Folder. Drop down your project name, drop down Core, and click Inc. Then, below this, click Advanced > Link to alternate Folder, and type in WORKSPACE_LOC/Firmware/coreutils in the box. Hit Apply and close.
 
 ## Resources

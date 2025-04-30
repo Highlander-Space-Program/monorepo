@@ -22,6 +22,10 @@
 #define EXT_ID_COMP_TYPE_SHIFT   5
 #define EXT_ID_INSTANCE_MASK     0x1F
 
+#define LENGTH 8
+
+uint8_t data[LENGTH];
+
 HAL_StatusTypeDef send_can_msg(const uint32_t extId, const uint8_t *data, const size_t len, CAN_HandleTypeDef *hcan) {
     CAN_TxHeaderTypeDef header;
     header.IDE = CAN_ID_EXT;

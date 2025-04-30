@@ -33,10 +33,10 @@ enum BOARD_CAN_ID_MAPPING {
 };
 
 enum COMMANDS {
-  SIGNAL_ALL = 0,  // previously OPEN_EO1 = 0,
-  REPORT_ALL = 1,  // previously CLOSE_EO1 = 1,
-  OPEN_PYRO = 2,
-  CLOSE_PYRO = 3,
+  OPEN_PYRO = 0, //  SIGNAL_ALL = 0,  //
+  CLOSE_PYRO = 1,//  REPORT_ALL = 1,  //
+  SIGNAL_ALL = 2, //  OPEN_PYRO = 2, //
+  REPORT_ALL = 3, //  CLOSE_PYRO = 3, //
   OPEN_NO4 = 4,
   CLOSE_NO4 = 5,
   OPEN_NO3 = 6,
@@ -44,8 +44,8 @@ enum COMMANDS {
   START_1 = 8,
   OPEN_NO2 = 9,
   CLOSE_NO2 = 10,
-  CLOSE_ALL = 12,
-  DECLOSE_ALL = 13,
+  AUTO_ON = 12,
+  AUTO_OFF = 13,
   ACTIVATE_IGNITER = 14,
   DEACTIVATE_IGNITER = 15,
   ABORT = 16,

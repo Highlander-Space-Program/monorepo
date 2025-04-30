@@ -59,6 +59,18 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define STATUS_IND_Pin GPIO_PIN_13
 #define STATUS_IND_GPIO_Port GPIOC
+#define IGNITER_CONT_Pin GPIO_PIN_3
+#define IGNITER_CONT_GPIO_Port GPIOA
+#define BRK_CONT_LED_SINK_Pin GPIO_PIN_10
+#define BRK_CONT_LED_SINK_GPIO_Port GPIOB
+#define BRK_CONT_LED_Pin GPIO_PIN_11
+#define BRK_CONT_LED_GPIO_Port GPIOB
+#define IGNITER_Pin GPIO_PIN_14
+#define IGNITER_GPIO_Port GPIOB
+#define BRK_CONT_SINK_Pin GPIO_PIN_6
+#define BRK_CONT_SINK_GPIO_Port GPIOB
+#define BRK_CONT_Pin GPIO_PIN_7
+#define BRK_CONT_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
