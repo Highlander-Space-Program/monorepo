@@ -31,7 +31,8 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "xbee/platform.h"
+#include "wpan/types.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
