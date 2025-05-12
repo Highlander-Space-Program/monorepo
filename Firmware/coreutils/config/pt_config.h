@@ -17,6 +17,8 @@ typedef struct {
     uint16_t frequency;
     float gain;
     float offset;
+    float min_val;
+    float max_val;
     char port;
 } PtConfig;
 
