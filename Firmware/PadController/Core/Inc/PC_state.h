@@ -62,9 +62,9 @@ void FLASH_ALL (uint32_t* board_can_ids, uint8_t numBoards) {
 	short_board_id = GET_SHORT_BOARD_ID (board_uid);
 	uint32_t ext_id = build_can_extended_id (SENDER_PAD_CONTROLLER, short_board_id, MSG_TYPE_FLASH_SIGNAL, 0x00);
 	HAL_StatusTypeDef status = send_can_msg(ext_id, data, LENGTH, &hcan1);
-	if (status != HAL_OK) {
-		HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
-	}
+//	if (status != HAL_OK) {
+//		HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
+//	}
   }
 }
 

@@ -77,6 +77,11 @@ static bool internal_xbee_rx_frame_enqueue(const XBeeRxFrame_t* frame) {
     if (frame == NULL || xbee_handler_rx_count >= XBEE_HANDLER_RX_FIFO_DEPTH) {
         return false;
     }
+    if (xbee_handler_rx_count >= XBEE_HANDLER_RX_FIFO_DEPTH) {
+        // RX FIFO is full, new frame will be dropped.
+        return false;
+    }
+
     xbee_handler_rx_fifo[xbee_handler_rx_head] = *frame;
     xbee_handler_rx_head = (xbee_handler_rx_head + 1) % XBEE_HANDLER_RX_FIFO_DEPTH;
     xbee_handler_rx_count++;
@@ -161,8 +166,8 @@ bool xbee_handler_rx_frame_dequeue(XBeeRxFrame_t* frame) {
 }
 
 void xbee_handler_service_rx_from_library(void) {
-    rx_packet_t raw_xbee_packet;
-    XBeeRxFrame_t new_parsed_frame;
+	static rx_packet_t raw_xbee_packet; // Now static
+	static XBeeRxFrame_t new_parsed_frame; // Now static
 
     if (xbee_rx_packet_available()) {
         if (xbee_rx_packet_dequeue(&raw_xbee_packet) > 0) {
@@ -237,17 +242,17 @@ int xbee_handler_send_data_frame(xbee_dev_t *xbee_dev,
 
     if (dest_addr_64) {
         tx_header.ieee_address = *dest_addr_64;
-    } else {
-        if (dest_addr_16 == WPAN_NET_ADDR_BROADCAST) { // Uses fallback if macro not defined
-             tx_header.ieee_address = *WPAN_IEEE_ADDR_BROADCAST;
-        } else if (dest_addr_16 == WPAN_NET_ADDR_UNDEFINED) {
-             memset(&tx_header.ieee_address, 0xFF, sizeof(addr64));
-             tx_header.ieee_address.b[0] = 0xFE;
-             tx_header.ieee_address.b[1] = 0xFF;
-        } else {
-            memset(&tx_header.ieee_address, 0xFF, sizeof(addr64));
-            tx_header.ieee_address.b[0] = 0xFE;
-            tx_header.ieee_address.b[1] = 0xFF;
+    } else { // dest_addr_64 is NULL
+        if (dest_addr_16 == WPAN_NET_ADDR_BROADCAST) { // 0xFFFF
+             tx_header.ieee_address = *WPAN_IEEE_ADDR_BROADCAST; // Standard 64-bit broadcast
+        } else { // Could be WPAN_NET_ADDR_UNDEFINED (0xFFFE) or a specific 16-bit unicast
+                 // For both cases where 64-bit is not provided, set to 0x00...00FFFE
+                 // This tells the XBee to use the 16-bit address for routing,
+                 // or that the 64-bit address is unknown.
+            memset(&tx_header.ieee_address, 0x00, sizeof(addr64));
+            tx_header.ieee_address.b[6] = 0xFF; // Assuming b[0] is MSB, b[7] is LSB
+            tx_header.ieee_address.b[7] = 0xFE; // for 00:00:00:00:00:00:FF:FE
+                                                // Adjust if your addr64 byte order is different
         }
     }
 

@@ -16,9 +16,9 @@ extern CAN_HandleTypeDef hcan1;
 void ACTUATE_SERVO(uint32_t ext_id, uint8_t servo_cmd) {
 	data [0] = servo_cmd;
 	HAL_StatusTypeDef status = send_can_msg(ext_id, data, LENGTH, &hcan1);
-	if (status != HAL_OK) {
-	    HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
-	}
+//	if (status != HAL_OK) {
+//	    HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
+//	}
 }
 
 #endif /* INC_COREUTILS_UTILS_SERVO_UTILS_H_ */
