@@ -20,6 +20,7 @@
 // how long to wait after the wire breaks before opening the valve
 #define VALVE_DELAY_MS 2000
 #define VALVE_FIRE_MS 3000
+#define FLASH_FREQUENCY_MS 1000
 
 // pad-controller states
 typedef enum
@@ -44,6 +45,7 @@ bool isAutoArmed = false;
 PadControllerState_t pcState   = PC_STARTUP;
 uint32_t             delayStart = 0;
 uint32_t             fireStart = 0;
+uint32_t 			 prev_flash = 0;
 
 #define LENGTH 8
 uint8_t data[LENGTH];
@@ -55,19 +57,20 @@ extern bool servos_activated;
 void FLASH_ALL (uint32_t* board_can_ids, uint8_t numBoards) {
   uint8_t short_board_id;
   uint32_t* board_uid;
-
-  //0x01020600
-  for (int i = 0; i < GET_NUM_BOARD_CONFIGS(); i++) {
-	board_uid = GET_BOARD_UID_FROM_CAN_ID (board_can_ids[i]);
-	short_board_id = GET_SHORT_BOARD_ID (board_uid);
-	uint32_t ext_id = build_can_extended_id (SENDER_PAD_CONTROLLER, short_board_id, MSG_TYPE_FLASH_SIGNAL, 0x00);
-	HAL_StatusTypeDef status = send_can_msg(ext_id, data, LENGTH, &hcan1);
-//	if (status != HAL_OK) {
-//		HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
-//	}
+  if (HAL_GetTick() - prev_flash >= FLASH_FREQUENCY_MS) {
+	  prev_flash = HAL_GetTick();
+	  //0x01020600
+	  for (int i = 0; i < GET_NUM_BOARD_CONFIGS(); i++) {
+		board_uid = GET_BOARD_UID_FROM_CAN_ID (board_can_ids[i]);
+		short_board_id = GET_SHORT_BOARD_ID (board_uid);
+		uint32_t ext_id = build_can_extended_id (SENDER_PAD_CONTROLLER, short_board_id, MSG_TYPE_FLASH_SIGNAL, 0x00);
+		HAL_StatusTypeDef status = send_can_msg(ext_id, data, LENGTH, &hcan1);
+	//	if (status != HAL_OK) {
+	//		HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin); // Indicate error
+	//	}
+	  }
   }
 }
-
 
 //PadController_Tick
 void PadController_Tick(uint8_t  cmd,

@@ -91,7 +91,7 @@ void Tick_SERVO (uint8_t cmd, Servo* servo) {
 		case CLOSE_SERVO:
 			if (servo->state == ON_CLOSED) {/*Not Used*/}
 			else if (servo->state == OFF_CLOSED) {
-				servo->state = ON_CLOSED;
+//				servo->state = ON_CLOSED;
 //				servo->last_tick_update = HAL_GetTick();
 			}
 			else if  (servo->state == ON_OPEN) {

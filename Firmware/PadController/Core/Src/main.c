@@ -68,25 +68,25 @@
 
 // Target XBee 1 (Commented out)
 //0013A20041B3F9C6
-#define TARGET_XBEE_ADDR_64_B0 0x00 // Example byte 0 (MSB)
-#define TARGET_XBEE_ADDR_64_B1 0x13 // Example byte 1
-#define TARGET_XBEE_ADDR_64_B2 0xA2 // Example byte 2
-#define TARGET_XBEE_ADDR_64_B3 0x00 // Example byte 3
-#define TARGET_XBEE_ADDR_64_B4 0x41 // Example byte 4
-#define TARGET_XBEE_ADDR_64_B5 0xB3 // Example byte 5
-#define TARGET_XBEE_ADDR_64_B6 0xF9 // Example byte 6
-#define TARGET_XBEE_ADDR_64_B7 0xC6 // Example byte 7 (LSB)
-
-// Target XBee 2 (Active)
-//0013A2004238A3E3
 //#define TARGET_XBEE_ADDR_64_B0 0x00 // Example byte 0 (MSB)
 //#define TARGET_XBEE_ADDR_64_B1 0x13 // Example byte 1
 //#define TARGET_XBEE_ADDR_64_B2 0xA2 // Example byte 2
 //#define TARGET_XBEE_ADDR_64_B3 0x00 // Example byte 3
-//#define TARGET_XBEE_ADDR_64_B4 0x42 // Example byte 4
-//#define TARGET_XBEE_ADDR_64_B5 0x38 // Example byte 5
-//#define TARGET_XBEE_ADDR_64_B6 0xA3 // Example byte 6
-//#define TARGET_XBEE_ADDR_64_B7 0xE3 // Example byte 7 (LSB)
+//#define TARGET_XBEE_ADDR_64_B4 0x41 // Example byte 4
+//#define TARGET_XBEE_ADDR_64_B5 0xB3 // Example byte 5
+//#define TARGET_XBEE_ADDR_64_B6 0xF9 // Example byte 6
+//#define TARGET_XBEE_ADDR_64_B7 0xC6 // Example byte 7 (LSB)
+
+// Target XBee 2 (Active)
+//0013A2004238A3E3
+#define TARGET_XBEE_ADDR_64_B0 0x00 // Example byte 0 (MSB)
+#define TARGET_XBEE_ADDR_64_B1 0x13 // Example byte 1
+#define TARGET_XBEE_ADDR_64_B2 0xA2 // Example byte 2
+#define TARGET_XBEE_ADDR_64_B3 0x00 // Example byte 3
+#define TARGET_XBEE_ADDR_64_B4 0x42 // Example byte 4
+#define TARGET_XBEE_ADDR_64_B5 0x38 // Example byte 5
+#define TARGET_XBEE_ADDR_64_B6 0xA3 // Example byte 6
+#define TARGET_XBEE_ADDR_64_B7 0xE3 // Example byte 7 (LSB)
 
 #define TARGET_XBEE_ADDR_16 WPAN_NET_ADDR_UNDEFINED // 0xFFFE, usually means use 64-bit address for routing
 /* USER CODE END PD */
@@ -288,20 +288,27 @@ static void process_pad_controller_command(XBeeRxFrame_t* received_xbee_frame) {
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+
   /* USER CODE BEGIN Init */
   /* USER CODE END Init */
 
+  /* Configure the system clock */
   SystemClock_Config();
+
   /* USER CODE BEGIN SysInit */
   // Recommendation: Initialize IWDG here if used
   // IWDG_Init();
   /* USER CODE END SysInit */
 
+  /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
   MX_USART6_UART_Init();
@@ -320,6 +327,7 @@ int main(void)
   {
       Error_Handler();
   }
+
   CAN_FilterTypeDef canfilterconfig;
   canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
   canfilterconfig.FilterBank = 0;
@@ -386,8 +394,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
     while (1)
     {
-      /* USER CODE END WHILE */
-      /* USER CODE BEGIN 3 */
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
       // Recommendation: Pet the IWDG here if used
       // IWDG_Refresh();
 
@@ -496,8 +505,8 @@ int main(void)
               prev_ack_send_time_ms = HAL_GetTick() - PERIODIC_ACK_INTERVAL_MS; // Force immediate ACK attempt
           }
       }
-      /* USER CODE END 3 */
     }
+  /* USER CODE END 3 */
 }
 
 /**
@@ -509,9 +518,14 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
+  /** Configure the main internal regulator output voltage
+  */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -521,6 +535,8 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
@@ -541,8 +557,16 @@ void SystemClock_Config(void)
   */
 static void MX_CAN1_Init(void)
 {
+
+  /* USER CODE BEGIN CAN1_Init 0 */
+
+  /* USER CODE END CAN1_Init 0 */
+
+  /* USER CODE BEGIN CAN1_Init 1 */
+
+  /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 8;
+  hcan1.Init.Prescaler = 40;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan1.Init.TimeSeg1 = CAN_BS1_2TQ;
@@ -557,6 +581,10 @@ static void MX_CAN1_Init(void)
   {
     Error_Handler();
   }
+  /* USER CODE BEGIN CAN1_Init 2 */
+
+  /* USER CODE END CAN1_Init 2 */
+
 }
 
 /**
@@ -566,6 +594,14 @@ static void MX_CAN1_Init(void)
   */
 static void MX_USART6_UART_Init(void)
 {
+
+  /* USER CODE BEGIN USART6_Init 0 */
+
+  /* USER CODE END USART6_Init 0 */
+
+  /* USER CODE BEGIN USART6_Init 1 */
+
+  /* USER CODE END USART6_Init 1 */
   huart6.Instance = USART6;
   huart6.Init.BaudRate = 9600;
   huart6.Init.WordLength = UART_WORDLENGTH_8B;
@@ -578,6 +614,10 @@ static void MX_USART6_UART_Init(void)
   {
     Error_Handler();
   }
+  /* USER CODE BEGIN USART6_Init 2 */
+
+  /* USER CODE END USART6_Init 2 */
+
 }
 
 /**
@@ -588,43 +628,122 @@ static void MX_USART6_UART_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
+
+  /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, BRK_CONT_LED_SINK_Pin|BRK_CONT_LED_Pin|IGNITER_Pin|BRK_CONT_SINK_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin : STATUS_IND_Pin */
   GPIO_InitStruct.Pin = STATUS_IND_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(STATUS_IND_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : IGNITER_CONT_Pin */
   GPIO_InitStruct.Pin = IGNITER_CONT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(IGNITER_CONT_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : BRK_CONT_LED_SINK_Pin BRK_CONT_LED_Pin IGNITER_Pin BRK_CONT_SINK_Pin */
   GPIO_InitStruct.Pin = BRK_CONT_LED_SINK_Pin|BRK_CONT_LED_Pin|IGNITER_Pin|BRK_CONT_SINK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : BRK_CONT_Pin */
   GPIO_InitStruct.Pin = BRK_CONT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(BRK_CONT_GPIO_Port, &GPIO_InitStruct);
+
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-    CAN_RxHeaderTypeDef rxHeader;
-    uint8_t rxData[8];
-    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
-    {
+	CAN_RxHeaderTypeDef RxHeader;
+	uint8_t RxData[8]; // Max CAN data length = 8 bytes
+
+	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK) {
+		// Log error or use Error_Handler();
+		return;
+	}
+
+	// --- Process only Extended ID messages ---
+	if (RxHeader.IDE != CAN_ID_EXT) {
+		return; // Ignore standard ID messages
+	}
+
+	// The 29-bit ID received from the header
+	uint32_t received_id_29bit = RxHeader.ExtId;
+
+	// --- Check if the message is an ACK (using the MSB = bit 28) ---
+	bool is_incoming_ack = (received_id_29bit & CAN_ID_ACK_FLAG_29BIT) != 0;
+
+	// --- Parse the ID fields ---
+	// (parse_can_extended_id ignores the ACK bit itself if it uses masks correctly)
+	uint8_t sender, board_id, msg_type, instance;
+	parse_can_extended_id(received_id_29bit, &sender, &board_id, &msg_type, &instance);
+
+    if (is_incoming_ack){
+		// Construct the payload for XBee: 4-byte CAN ID (shifted) + CAN Data
+		uint8_t xbee_payload[4 + 8]; // Max size: 4 bytes ID + 8 bytes data
+		size_t xbee_payload_len = 4 + RxHeader.DLC; // Total length
+
+		// Ensure DLC is valid before proceeding
+		if (RxHeader.DLC > 8) {
+			 // Invalid CAN DLC, handle error or ignore
+			 return;
+		}
+
+		// 1. Get the 32-bit shifted CAN ID representation (as expected by Python side)
+		//    This includes the ACK flag already set in received_id_29bit
+		uint32_t can_id_for_xbee_32bit = received_id_29bit << 3;
+
+		// 2. Copy CAN ID into XBee payload buffer (Big Endian)
+		xbee_payload[0] = (uint8_t)((can_id_for_xbee_32bit >> 24) & 0xFF);
+		xbee_payload[1] = (uint8_t)((can_id_for_xbee_32bit >> 16) & 0xFF);
+		xbee_payload[2] = (uint8_t)((can_id_for_xbee_32bit >> 8) & 0xFF);
+		xbee_payload[3] = (uint8_t)(can_id_for_xbee_32bit & 0xFF);
+
+		// 3. Copy CAN Data payload (if any)
+		if (RxHeader.DLC > 0) {
+			memcpy(&xbee_payload[4], RxData, RxHeader.DLC);
+		}
+
+		// 4. Send the combined payload via XBee to the Pad Controller
+		//    Using the assumed higher-level function for simplicity here.
+		//    Using Frame ID 0 often means no TX status is requested or needed for this forward.
+		//    Adjust parameters based on your actual XBee handler function.
+		int send_status = xbee_handler_send_byte_array(&xbee, // XBee device instance
+													   &g_target_xbee_ieee_addr, // Target 64-bit Addr
+													   g_target_xbee_network_addr,     // Target 16-bit Addr (0xFFFE)
+													   xbee_payload,                     // Data to send
+													   xbee_payload_len,                 // Length of data
+													   0,                                // Frame ID (0 = No TX Status)
+													   0);                               // Options (e.g., XBEE_HANDLER_TX_OPT_NONE)
+
+		if (send_status < 0) {
+		// Handle XBee transmission failure (e.g., log error, queue full?)
+		// printf("Failed to forward CAN ACK (ID: 0x%08lX) via XBee, status: %d\r\n", received_id_29bit, send_status);
+		} else {
+			// Message successfully queued for XBee transmission
+			// printf("Forwarded CAN ACK (ID: 0x%08lX) via XBee.\r\n", received_id_29bit);
+		}
     }
 }
 
@@ -632,19 +751,32 @@ void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
 {
 //    STATUS_IND_Toggle();
 }
+
 /* USER CODE END 4 */
 
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
 void Error_Handler(void)
 {
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)
   {
-    HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin);
-    HAL_Delay(100); // Fast blink for error
   }
+  /* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
@@ -655,4 +787,3 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-

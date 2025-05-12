@@ -58,7 +58,12 @@ TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim14;
 TIM_HandleTypeDef htim16;
 
-// This allows multiple commands to be sent in a row without any potential issues with interrupts occurring over each other.
+/* USER CODE BEGIN PV */
+static volatile uint32_t adc_val = 0;
+
+uint32_t board_uid[3];
+static uint8_t short_board_id;
+
 volatile SERVO_CMD servo_cmd = CLOSE_SERVO;
 volatile uint8_t servo_instance = -1;
 volatile THERMO_CMD thermo_cmd = TEMP_WAIT;
@@ -67,12 +72,6 @@ volatile HEATER_CMD heater_cmd = H_OFF;
 volatile uint8_t heater_instance = -1;
 volatile bool new_command_received = 0;
 volatile bool flash_signal_cmd = 0;
-
-/* USER CODE BEGIN PV */
-static volatile uint32_t adc_val = 0;
-
-uint32_t board_uid[3];
-static uint8_t short_board_id;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -189,8 +188,7 @@ int main(void)
   MX_TIM16_Init();
   MX_TIM2_Init();
   MX_ADC_Init();
-
-/* USER CODE BEGIN 2 */
+  /* USER CODE BEGIN 2 */
   GET_BOARD_UID (board_uid);
   short_board_id = GET_SHORT_BOARD_ID (board_uid);
 
@@ -209,16 +207,17 @@ int main(void)
   uint32_t canIdFilter = (short_board_id << 16);
   uint32_t canIdMask = 0x00FF0000;
 
-  // Set IDE bit in both filter and mask
+
+  uint32_t canIdFilter = ((uint32_t)short_board_id << 16);
   canIdFilter |= CAN_ID_EXT;
-  canIdFilter |= CAN_RTR_DATA;
+  uint32_t canIdMask = (0xFFUL << 16);
   canIdMask |= CAN_ID_EXT;
   canIdMask |= CAN_RTR_DATA;
-
-  filter.FilterIdHigh = (canIdFilter >> 16) & 0xFFFF;
-  filter.FilterIdLow = canIdFilter & 0xFFFF;
-  filter.FilterMaskIdHigh = (canIdMask >> 16) & 0xFFFF;
-  filter.FilterMaskIdLow = canIdMask & 0xFFFF;
+  canIdMask |= (1UL << 31);
+  filter.FilterIdHigh = (uint16_t)(canIdFilter >> 16);
+  filter.FilterIdLow = (uint16_t)(canIdFilter & 0xFFFF);
+  filter.FilterMaskIdHigh = (uint16_t)(canIdMask >> 16);
+  filter.FilterMaskIdLow = (uint16_t)(canIdMask & 0xFFFF);
 
 //  CAN_FilterTypeDef filter;
 //
@@ -318,9 +317,7 @@ int main(void)
 
     // more visual feedback
 
-    if (flash_signal_cmd) {
-    	flash_signal_cmd = Tick_SIGNAL (flash_signal_cmd);
-    }
+    flash_signal_cmd = Tick_SIGNAL (flash_signal_cmd);
   }
     /* USER CODE END WHILE */
 
@@ -437,11 +434,11 @@ static void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN;
-  hcan.Init.Prescaler = 6;
+  hcan.Init.Prescaler = 120;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_2TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
   hcan.Init.AutoWakeUp = DISABLE;
@@ -656,14 +653,26 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     }
 
     // Parse extended ID to extract fields
-    uint8_t sender, board_id, msg_type, instance;
-    parse_can_extended_id(RxHeader.ExtId, &sender, &board_id, &msg_type, &instance);
+    uint8_t sender, board_id, msg_type, instance, payload;
+    uint32_t received_id_29bit = RxHeader.ExtId;
+
+    parse_can_extended_id(received_id_29bit, &sender, &board_id, &msg_type, &instance);
 
     // Check if message is intended for this board
     if (board_id == short_board_id) {
         // Set command based on component type
+        bool is_incoming_ack = (received_id_29bit & (CAN_ID_ACK_FLAG_29BIT)) != 0;
+        if (!is_incoming_ack) {
+        	HAL_StatusTypeDef ack_status = send_can_ack(received_id_29bit, &payload, 0, hcan);
+        	if (ack_status != HAL_OK) {
+				// Optional: Log or handle ACK transmission failure
+        		is_incoming_ack = (received_id_29bit & (CAN_ID_ACK_FLAG_29BIT)) != 0;
+        	}
+        }
+
         switch (msg_type) {
             case MSG_TYPE_SERVO:
+
                 // First byte contains the servo command
                 servo_cmd = RxData[0];
                 servo_instance = instance;

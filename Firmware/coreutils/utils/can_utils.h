@@ -22,6 +22,8 @@
 #define EXT_ID_COMP_TYPE_SHIFT   5
 #define EXT_ID_INSTANCE_MASK     0x1F
 
+#define CAN_ID_ACK_FLAG_29BIT (1UL << 28) // 0x10000000 (Bit 28)
+
 #define LENGTH 8
 
 uint8_t data[LENGTH];
@@ -54,6 +56,19 @@ void parse_can_extended_id(const uint32_t extId, uint8_t *sender, uint8_t *board
     *boardId = (extId >> EXT_ID_BOARD_ID_SHIFT) & 0xFF;
     *msgType = (extId >> EXT_ID_COMP_TYPE_SHIFT) & 0xFF;
     *instance = extId & EXT_ID_INSTANCE_MASK;
+}
+
+HAL_StatusTypeDef send_can_ack(const uint32_t received_ext_id_29bit, const uint8_t *ack_data, const size_t ack_len, CAN_HandleTypeDef *hcan)
+{
+    // 1. Create the 29-bit ACK ID by setting the ACK flag (MSB) on the received ID
+    uint32_t ack_ext_id_29bit = received_ext_id_29bit | CAN_ID_ACK_FLAG_29BIT;
+
+    // 2. Prepare the 32-bit shifted ID required by send_can_msg
+    //    (Shift the 29-bit ACK ID left by 3)
+    uint32_t ack_ext_id_32bit_shifted = ack_ext_id_29bit << 3;
+
+    // 3. Call the existing send function with the 32-bit shifted ACK ID
+    return send_can_msg(ack_ext_id_32bit_shifted, ack_data, ack_len, hcan);
 }
 
 #endif /* INC_CAN_UTILS_H_ */
