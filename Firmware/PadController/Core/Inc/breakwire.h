@@ -38,6 +38,35 @@ static inline void Breakwire_LED_Off(void) {
     HAL_GPIO_WritePin(BRK_CONT_LED_GPIO_Port, BRK_CONT_LED_Pin, GPIO_PIN_RESET);
 }
 
+void send_breakwire_status_can(bool is_system_armed) {
+    BreakwireStatusByte_t status_val;
+    GPIO_PinState physical_state = Check_Breakwire(); // From breakwire.h
+
+    if (physical_state == GPIO_PIN_RESET) { // Continuity = Connected
+        if (is_system_armed) {
+            status_val = BREAKWIRE_CONNECTED_ARMED;
+        } else {
+            status_val = BREAKWIRE_CONNECTED_NOT_ARMED;
+        }
+    } else { // GPIO_PIN_SET = No Continuity = Disconnected
+        if (is_system_armed) {
+            status_val = BREAKWIRE_DISCONNECTED_ARMED;
+        } else {
+            // If the system is not armed and the wire is disconnected,
+            // it's simply disconnected.
+            status_val = BREAKWIRE_DISCONNECTED;
+        }
+    }
+
+    uint8_t status_byte = (uint8_t)status_val;
+    send_pad_controller_status_can(MSG_TYPE_BREAKWIRE_STATUS, status_byte);
+}
+
+void send_auto_mode_status_can(bool is_on) {
+    uint8_t status_byte = is_on ? 1 : 0;
+    send_pad_controller_status_can(MSG_TYPE_AUTO_MODE_STATUS, status_byte);
+}
+
 // Update the breakwire LED based on the sensor state and auto-armed status.
 static inline void Tick_Breakwire_LED(void) {
     // Read the state once to improve efficiency.

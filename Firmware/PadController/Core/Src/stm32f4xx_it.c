@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
+#include "stdbool.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -63,7 +64,11 @@ volatile uint16_t _ufsr_flags;
 volatile uint8_t  _mfsr_flags;
 volatile uint8_t  _bfsr_flags;
 
+volatile uint8_t test_var;
+
 extern uint8_t g_hal_rx_byte_buffer;
+extern volatile bool_t g_request_uart6_reinit;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -293,4 +298,73 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
   // Add else if for other UARTs if you use them with Transmit_IT
 }
 
+/**
+  * @brief  UART error callbacks.
+  * @param  huart Pointer to a UART_HandleTypeDef structure that contains
+  * the configuration information for the specified UART module.
+  * @retval None
+  */
+
+/**
+  * @brief  UART error callbacks.
+  * @param  huart Pointer to a UART_HandleTypeDef structure that contains
+  * the configuration information for the specified UART module.
+  * @retval None
+  */
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->Instance == USART6) // Check if the error is from your XBee UART
+  {
+    // You can log huart->ErrorCode to see what specific error occurred
+    // For example: printf("UART6 Error: 0x%lx\r\n", huart->ErrorCode);
+
+    // Handle specific errors and attempt to recover
+    // It's important to clear error flags. The HAL_UART_IRQHandler might clear some,
+    // but explicitly clearing them or taking recovery actions here is robust.
+
+    if (huart->ErrorCode & HAL_UART_ERROR_ORE)
+    {
+      // Overrun error
+      // For many STM32s, the HAL_UART_IRQHandler (by reading DR) might clear ORE.
+      // However, ensuring the UART is ready for new data is key.
+      __HAL_UART_CLEAR_OREFLAG(huart); // Good practice to explicitly clear if available/needed
+    }
+    if (huart->ErrorCode & HAL_UART_ERROR_NE)
+    {
+      // Noise error
+      __HAL_UART_CLEAR_NEFLAG(huart); // Check if specific clear flag macros exist for your HAL version/MCU
+                                      // Or often, reading DR (done by IRQHandler for RXNE) clears these.
+    }
+    if (huart->ErrorCode & HAL_UART_ERROR_FE)
+    {
+      // Framing error
+      __HAL_UART_CLEAR_FEFLAG(huart); // Similar to NE.
+    }
+
+    // After an error, the HAL might have stopped the interrupt-driven reception.
+    // It's crucial to re-start it to continue receiving data.
+    // The UART error flags should be cleared before attempting to re-arm.
+    // The HAL_UART_IRQHandler usually handles reading DR to clear RXNE, which also clears ORE, FE, NE.
+    // The main goal here is to ensure HAL_UART_Receive_IT is called again.
+
+    // Attempt to re-arm the reception.
+    // It's possible that HAL_UART_AbortReceive_IT(huart) might be needed first if the
+    // HAL's internal state is stuck, but try re-arming directly first.
+    if (HAL_UART_Receive_IT(huart, &g_hal_rx_byte_buffer, 1) != HAL_OK)
+    {
+      // Failed to re-arm reception after an error.
+      // This is a serious situation. You might need to:
+      // 1. Log this critical failure.
+      // 2. Attempt a full UART peripheral re-initialization:
+      //    (Be cautious with calling your xbee_ser_close/open from an ISR directly
+      //     if they are not designed for it. Setting a flag for the main loop
+      //     to handle re-initialization might be safer.)
+      //    Error_Handler(); // Or a less drastic, specific error handling routine
+    	test_var = test_var + 1;
+    }
+  }
+  // Add else if for other UARTs if they have errors
+}
+
+/* USER CODE END 1 */
 /* USER CODE END 1 */

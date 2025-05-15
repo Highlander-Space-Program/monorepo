@@ -21,7 +21,7 @@
 extern UART_HandleTypeDef huart6; // Provided by CubeMX‐generated usart.c
 // Ensure api_escape is part of your xbee_serial_t definition if you use the s->api_escape check.
 // Example: typedef struct xbee_serial_s { UART_HandleTypeDef *huart; uint32_t baudrate; bool_t api_escape; } xbee_serial_t;
-static xbee_serial_t xbee_port = { .huart = &huart6, .baudrate = 9600 /*, .api_escape = TRUE */ };
+static xbee_serial_t xbee_port = { .huart = &huart6, .baudrate = 38400 /*, .api_escape = TRUE */ };
 
 // -----------------------------------------------------------------------------
 // 1a.  TX DEBUG RING (original, kept for debugging frame contents)

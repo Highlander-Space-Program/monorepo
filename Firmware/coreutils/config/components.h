@@ -23,10 +23,9 @@
 // - 1: Pad controller
 // - 2: Servo board
 // - 3: Sensor board
-// - 4: Tester board (this code and controller)
-// - 254: Tester board (hardware)
-// - 255: PC/Terminal (lowest priority)
-// - 5-253: Reserved for future devices
+// - 4: Tester board
+// - 5: Control Panel
+// - 6-127: Reserved for future devices
 //
 // Board ID field (8 bits - identifies specific physical boards):
 // - 0-255: Unique identifier for each physical board in the system
@@ -64,15 +63,15 @@ ServoConfig servo_lookup_table[] = {
 	{{0x00390043, 0x48585311, 0x20373733}, 0x02010108, "FV-N02", 200, 85, -1},
 	{{0x0032002D, 0x48585314, 0x20373733}, 0x02020108, "FV-N03", 200, 85, -1},
 	{{0x00310043, 0x48585311, 0x20373733}, 0x02030108, "FV-N04", 200, 85, -1},
-	{{0x003a0042, 0x48585311, 0x20373733}, 0x00040108, "FV-PYRO", 135, 0, -1}
+	{{0x003a0042, 0x48585311, 0x20373733}, 0x02040108, "FV-PYRO", 200, 85, -1}
 };
 
 // BoardID, CAN_ID (29 bits), NAME, OPEN_ANGLE, CLOSED_ANGLE, UPDATE_FREQUENCY
 ThermoConfig thermo_lookup_table[] = {
-    {{0x00390043, 0x48585311, 0x20373733}, 0x02010208, "TC-02", 100},
-    {{0x0032002D, 0x48585314, 0x20373733}, 0x02020208, "TC-03", 100},
-	{{0x00310043, 0x48585311, 0x20373733}, 0x02030208, "TC-04", 100},
-	{{0x003a0042, 0x48585311, 0x20373733}, 0x00040208, "TC-05", 100}
+    {{0x00390043, 0x48585311, 0x20373733}, 0x02010208, "TC-02", 2},
+    {{0x0032002D, 0x48585314, 0x20373733}, 0x02020208, "TC-03", 2},
+	{{0x00310043, 0x48585311, 0x20373733}, 0x02030208, "TC-04", 2},
+	{{0x003a0042, 0x48585311, 0x20373733}, 0x02040208, "TC-05", 2}
 };
 
 // BoardID, CAN_ID (29 bits), NAME, OPEN_ANGLE, CLOSED_ANGLE, UPDATE_FREQUENCY
@@ -80,16 +79,15 @@ HeaterConfig heater_lookup_table[] = {
 	{{0x00390043, 0x48585311, 0x20373733}, 0x02010408, "H-02", 30, 25, 100},
 	{{0x0032002D, 0x48585314, 0x20373733}, 0x02020408, "H-03", 29, 27, 100},
 	{{0x00310043, 0x48585311, 0x20373733}, 0x02030408, "H-04", 29, 27, 100},
-	{{0x003a0042, 0x48585311, 0x20373733}, 0x00040408, "H-05", 29, 27, 100}
+	{{0x003a0042, 0x48585311, 0x20373733}, 0x02040408, "H-05", 29, 27, 100}
 };
 
 // BoardID, CAN_ID, NAME, FREQUENCY, GAIN, offset min_val, max_val, OFFSET
 PtConfig pt_lookup_table[] = {
-	{{0x002b002c, 0x48585314, 0x20373733}, 0x00110308, "PT-01", 100, 1, 0, 0, 1600, 'A'},
-	{{0x002b002c, 0x48585314, 0x20373733}, 0x00110310, "PT-02", 101, 1, 0, 0, 1000, 'B'},
-	{{0x0032001e, 0x46304317, 0x200003e0}, 0x00120308, "PT-03", 102, 1, 0, 0, 1000, 'B'},
-	{{0x0032001e, 0x46304317, 0x200003e0}, 0x00110310, "PT-04", 103, 1, 0, 0, 1000, 'A'}
-
+	{{0x002b002c, 0x48585314, 0x20373733}, 0x03110308, "PT-01", 2, 1, 0, 0, 1600, 'A'},
+	{{0x002b002c, 0x48585314, 0x20373733}, 0x03110310, "PT-02", 2, 1, 0, 0, 1000, 'B'},
+	{{0x0032001e, 0x46304317, 0x20383557}, 0x03120308, "PT-03", 2, 1, 0, 0, 1000, 'B'},
+	{{0x0032001e, 0x46304317, 0x20383557}, 0x03120310, "PT-04", 2, 1, 0, 0, 1000, 'A'}
 };
 
 BoardConfig board_lookup_table[] = {
@@ -97,8 +95,9 @@ BoardConfig board_lookup_table[] = {
 	{{0x0032002D, 0x48585314, 0x20373733}, 0x02, "LEONARDO", "FV-NO3"},
 	{{0x00310043, 0x48585311, 0x20373733}, 0x03, "MICHELANGELO", "FV-NO4"},
 	{{0x003a0042, 0x48585311, 0x20373733}, 0x04, "RAPHAEL", "FV-PYRO"},
-	{{0x002b002c, 0x48585314, 0x20373733}, 0x11, "SPLINTER", "PT-PLACEHOLDER-1"},
-	{{0x0032001e, 0x46304317, 0x200003e0}, 0x12, "APRIL", "PT-PLACEHOLDER-2"}
+	{{0x002b002c, 0x48585314, 0x20373733}, 0x11, "SPLINTER", "SENSOR-1"},
+	{{0x0032001e, 0x46304317, 0x20383557}, 0x12, "APRIL", "SENSOR-2"},
+	{{0x0042003d, 0x3034510d, 0x37363432}, 0x20, "CASEY", "PAD-CONTROLLER"}
 };
 
 ServoConfig* GET_SERVO_CONFIGS() {

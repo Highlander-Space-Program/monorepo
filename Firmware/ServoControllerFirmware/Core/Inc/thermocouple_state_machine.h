@@ -17,16 +17,18 @@ typedef struct {
   ThermoConfig* thermo_config;
   THERMO_STATE state;
   ADC_HandleTypeDef* adc;
-  double temperature;
+  float temperature;
   uint32_t* adc_val;
   uint32_t last_tick_update; // Use HAL_GetTick() for tracking time
 } Thermocouple;
 
-
+static uint8_t short_board_id;
+extern CAN_HandleTypeDef hcan;
 
 //Function Prototypes
 void Tick_THERMO (uint8_t cmd, Thermocouple* thermo);
 Thermocouple* construct_thermo (const uint32_t can_id, ADC_HandleTypeDef *adc, volatile uint32_t* adc_val);
+void send_thermo_status_can(Thermocouple* thermo, uint8_t short_board_id, CAN_HandleTypeDef* hcan);
 
 /**
   * @brief  The construct_thermo function is used to create a thermocouple.
@@ -38,6 +40,35 @@ Thermocouple* construct_thermo (const uint32_t can_id, ADC_HandleTypeDef *adc, v
   *
   * @retval Thermocouple* returns a pointer to the constructed thermo.
   */
+
+void send_thermo_status_can(Thermocouple* thermo, uint8_t short_board_id, CAN_HandleTypeDef* hcan) {
+	uint8_t status_bytes[4];
+	float temp = thermo->temperature;
+	uint8_t temp_raw[4];
+
+	memcpy(temp_raw, &temp, sizeof(temp));
+	status_bytes[0] = temp_raw[3];
+	status_bytes[1] = temp_raw[2];
+	status_bytes[2] = temp_raw[1];
+	status_bytes[3] = temp_raw[0];
+
+	uint8_t sender_id = short_board_id;
+    uint8_t target_board_id = SENDER_PAD_CONTROLLER;
+    uint8_t msg_type_val = MSG_TYPE_THERMOCOUPLE; // Using existing general servo type
+    uint8_t instance_val = 1;
+
+    uint32_t base_ext_id_32bit_shifted = build_can_extended_id(sender_id, target_board_id, msg_type_val, instance_val);
+    uint32_t base_ext_id_29bit = base_ext_id_32bit_shifted >> 3;
+    uint32_t ack_ext_id_29bit = base_ext_id_29bit | CAN_ID_ACK_FLAG_29BIT;
+    uint32_t final_ext_id_32bit_shifted_for_send = ack_ext_id_29bit << 3;
+
+    HAL_StatusTypeDef status = send_can_msg(final_ext_id_32bit_shifted_for_send, status_bytes, 4, hcan);
+
+    if (status != HAL_OK) {
+        // Handle CAN send error
+    }
+}
+
 Thermocouple* construct_thermo (const uint32_t can_id, ADC_HandleTypeDef *adc, volatile uint32_t* adc_val) {
     ThermoConfig *tc = GET_THERMO_CONFIG(can_id);
     if (!tc) {
@@ -75,7 +106,7 @@ void Tick_THERMO (uint8_t cmd, Thermocouple* thermo) {
 	}
 
     // Check if frequency time has passed and then get another measurement for thermo
-    if ((HAL_GetTick() - thermo->last_tick_update) >= 1.0 / thermo->thermo_config->frequency) {
+    if ((HAL_GetTick() - thermo->last_tick_update) >= 1000.0 / thermo->thermo_config->frequency) {
     	thermo->state = TEMP_GET;
     }
 
@@ -88,6 +119,8 @@ void Tick_THERMO (uint8_t cmd, Thermocouple* thermo) {
 
 	    	HAL_ADC_Start_DMA(thermo->adc, thermo->adc_val,1);
 	    	thermo->temperature = Get_Temperature(*(thermo->adc_val));
+	    	send_thermo_status_can (thermo, short_board_id, &hcan);
+	    	thermo->state = TEMP_WAIT;
 			break;
 	}
 }

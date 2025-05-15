@@ -42,10 +42,24 @@ Heater* construct_heater (const uint32_t can_id, Thermocouple* thermo) {
     return heater;
 }
 
-void Heater_Auto () {
+void send_heater_status_can(Heater* heater, uint8_t short_board_id, CAN_HandleTypeDef *hcan) {
+    uint8_t status_byte = (uint8_t)heater->directive; // HEATER_IS_ON (1) or HEATER_IS_OFF (0)
+    uint8_t sender_id = short_board_id;
+    uint8_t target_board_id = SENDER_PAD_CONTROLLER;
+    uint8_t msg_type_val = MSG_TYPE_HEATER; // Using existing general heater type
+    uint8_t instance_val = 0;
 
+    uint32_t base_ext_id_32bit_shifted = build_can_extended_id(sender_id, target_board_id, msg_type_val, instance_val);
+    uint32_t base_ext_id_29bit = base_ext_id_32bit_shifted >> 3;
+    uint32_t ack_ext_id_29bit = base_ext_id_29bit | CAN_ID_ACK_FLAG_29BIT;
+    uint32_t final_ext_id_32bit_shifted_for_send = ack_ext_id_29bit << 3;
+
+    HAL_StatusTypeDef status = send_can_msg(final_ext_id_32bit_shifted_for_send, &status_byte, 1, hcan);
+
+    if (status != HAL_OK) {
+        // Handle CAN send error
+    }
 }
-
 void Tick_HEATER (uint8_t cmd, Heater* heater) {
 
 	//----------TRANSITIONS----------

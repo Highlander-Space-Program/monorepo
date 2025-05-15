@@ -14,46 +14,74 @@
 #include "flight_config.h"
 
 enum MESSAGE_TYPE {
-     MSG_TYPE_SYSTEM = 0,
-     MSG_TYPE_SERVO = 1,
-     MSG_TYPE_THERMOCOUPLE = 2,
-     MSG_TYPE_PRESSURE = 3,
-     MSG_TYPE_HEATER = 4,
-     MSG_TYPE_LED = 5,
-     MSG_TYPE_FLASH_SIGNAL = 6
+    MSG_TYPE_SYSTEM               = 0,
+    MSG_TYPE_SERVO                = 1,
+    MSG_TYPE_THERMOCOUPLE         = 2,
+    MSG_TYPE_PRESSURE             = 3,
+    MSG_TYPE_HEATER               = 4,
+    MSG_TYPE_LED                  = 5,
+    MSG_TYPE_FLASH_SIGNAL         = 6,
+    // --- Added Status Types ---
+    MSG_TYPE_BREAKWIRE_STATUS     = 19,
+    MSG_TYPE_IGNITER_STATUS       = 20,
+    MSG_TYPE_AUTO_MODE_STATUS     = 21,
+    MSG_TYPE_SERVOS_POWER_STATUS  = 22,
+    MSG_TYPE_PC_STATE_STATUS      = 23, // Added PC State status
+    // --- Added Standard Response/ACK Types ---
+    MSG_TYPE_BOARD_STATUS_RESPONSE= 24,
+    MSG_TYPE_ACK_GENERIC          = 25,
+	MSG_TYPE_RESET				  = 26
+    // --- Add other reserved/future types as needed ---
 };
 
 enum BOARD_CAN_ID_MAPPING {
-	SENDER_PAD_CONTROLLER = 1,
-	SENDER_SERVO_BOARD = 2,
-	SENDER_SENSOR_BOARD = 3,
-	SENDER_TESTER_BOARD = 4,
-	SENDER_HW_TESTER = 254,
-	SENDER_PC = 255
+    SENDER_BREAK_WIRE       = 0,  // Added
+    SENDER_PAD_CONTROLLER   = 1,
+    SENDER_SERVO_BOARD      = 2,
+    SENDER_SENSOR_BOARD     = 3,
+    SENDER_TESTER_BOARD_SW  = 4,  // Renamed from SENDER_TESTER_BOARD
+    SENDER_CONTROL_PANEL    = 5,  // Added (Matches Python's PC Sender ID usage)
+    // --- IDs 6-253 Reserved ---
+    SENDER_HW_TESTER        = 254,
+    SENDER_PC               = 255 // Generic PC/Terminal, distinct from Control Panel (ID 5)? Verify which ID the Python app uses. If Python uses 255, use SENDER_PC = 5 instead. Assuming 5 for now based on previous context.
 };
 
 enum COMMANDS {
-  OPEN_PYRO = 0, //  SIGNAL_ALL = 0,  //
-  CLOSE_PYRO = 1,//  REPORT_ALL = 1,  //
-  SIGNAL_ALL = 2, //  OPEN_PYRO = 2, //
-  REPORT_ALL = 3, //  CLOSE_PYRO = 3, //
-  OPEN_NO4 = 4,
-  CLOSE_NO4 = 5,
-  OPEN_NO3 = 6,
-  CLOSE_NO3 = 7,
-  START_1 = 8,
-  OPEN_NO2 = 9,
-  CLOSE_NO2 = 10,
-  AUTO_ON = 12,
-  AUTO_OFF = 13,
-  ACTIVATE_IGNITER = 14,
-  DEACTIVATE_IGNITER = 15,
-  ABORT = 16,
-  ACTIVATE_SERVOS = 17,
-  DEACTIVATE_SERVOS = 18,
-  DEABORT = 19,
-  CHECK_STATE = 20,
-  DESTART = 21,
+    // Servo Commands
+    OPEN_PYRO           = 0,
+    CLOSE_PYRO          = 1,
+    OPEN_NO4            = 4,
+    CLOSE_NO4           = 5,
+    OPEN_NO3            = 6,
+    CLOSE_NO3           = 7,
+    OPEN_NO2            = 9,
+    CLOSE_NO2           = 10,
+    // System Commands / Toggles
+    SIGNAL_ALL          = 2, // Send signal (e.g., LED flash) to all boards
+    REPORT_ALL          = 3, // Request components report their status (alternative to CHECK_STATE?)
+    AUTO_ON             = 12,
+    AUTO_OFF            = 13,
+    ACTIVATE_IGNITER    = 14,
+    DEACTIVATE_IGNITER  = 15,
+    ACTIVATE_SERVOS     = 17, // Enable power to servos
+    DEACTIVATE_SERVOS   = 18, // Disable power to servos
+    CHECK_STATE         = 20, // Generic state request? Maybe same as REPORT_ALL or BOARD_STATUS_REQUEST?
+    // --- Removed: START_1 = 8 ---
+    // --- Removed: ABORT = 16 ---
+    // --- Removed: DEABORT = 19 ---
+    // --- Removed: DESTART = 21 ---
+    // Maintenance / Status Request Commands
+    CMD_RADIO_HEALTHCHECK  = 22, // Added alias for clarity (Matches Python value)
+    CMD_BOARD_STATUS_REQUEST = 23, // Added (Matches Python value)
+
+    // Aliases for heater commands if used directly
+    // H_OFF               = ??,
+    // H_ON                = ??,
+    // H_AUTO              = ??,
+
+    // Aliases for thermocouple commands if used directly
+    // FORCE_GET_TEMP         = ??,
+    // FORCE_RESET_THERMO_TIMER = ??,
 };
 
 void GET_BOARD_UID (uint32_t* board_uid) {

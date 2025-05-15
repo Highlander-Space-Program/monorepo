@@ -16,16 +16,11 @@
 // Delay before marking the breakwire as "open", if required.
 #define BREAKWIRE_OPEN_DELAY_MS 4000
 
-// Definitions for the breakwire pin and LED port/pin can also be placed here:
-//#define BRK_CONT_GPIO_Port      GPIOA   // Or whichever port is used
-//#define BRK_CONT_Pin            GPIO_PIN_2  // Replace X with the correct pin number // PyroCont1. also from pin16 to pin 2
-//
-//
-//
-//
-//
-//
-//#define BRK_CONT_LED_GPIO_Port  GPIOC   // Adjust as required      (not using at the moments)
-//#define BRK_CONT_LED_Pin        GPIO_PIN_13 // Replace Y with the LED pin // already have the status indicator (not using at the moment)
+typedef enum {
+    BREAKWIRE_CONNECTED_NOT_ARMED = 0,
+    BREAKWIRE_CONNECTED_ARMED     = 1,
+    BREAKWIRE_DISCONNECTED        = 2, // Implies not armed by function, or could be DISCONNECTED_NOT_ARMED
+    BREAKWIRE_DISCONNECTED_ARMED  = 3  // e.g. system armed, then wire breaks
+} BreakwireStatusByte_t;
 
 #endif /* INC_BREAKWIRE_CONFIG_H_ */

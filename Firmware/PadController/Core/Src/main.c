@@ -54,7 +54,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define NUM_BOARDS 5
+#define NUM_BOARDS 6
 #define XBEE_DEVICE_INIT_TIMEOUT_MS 10000 // Timeout for XBee library initial handshake with module
 #define XBEE_AT_COMMAND_TIMEOUT_MS  5000  // Default timeout for AT commands sent via handler
 
@@ -115,6 +115,7 @@ volatile bool g_xbee_target_unreachable = false;
 volatile uint32_t g_xbee_tx_fail_count = 0;
 volatile uint8_t g_periodic_ack_frame_id = 0; // Stores the frame_id of the last periodic ACK sent. 0 means no ACK is pending TX status.
 volatile uint32_t g_ack_pending_timestamp = 0; // Timestamp for when an ACK started waiting for TX status
+volatile bool_t g_request_uart6_reinit = false;
 
 static xbee_dev_t   xbee;
 
@@ -126,12 +127,14 @@ uint32_t* no3_board_uid;
 uint32_t* no4_board_uid;
 uint32_t* pyro_board_uid;
 uint32_t* pt01_board_uid;
+uint32_t* pt03_board_uid;
 
 uint32_t no2_can_id;
 uint32_t no3_can_id;
 uint32_t no4_can_id;
 uint32_t pyro_can_id;
 uint32_t pt01_can_id;
+uint32_t pt03_can_id;
 
 uint32_t board_can_ids[NUM_BOARDS];
 
@@ -140,6 +143,7 @@ uint32_t prev_ack_send_time_ms = 0;
 uint32_t servo_can_id;
 
 XBeeRxFrame_t current_received_xbee_frame;
+static uint8_t short_board_id;
 
 static const addr64 g_target_xbee_ieee_addr = {
     .b = {TARGET_XBEE_ADDR_64_B0, TARGET_XBEE_ADDR_64_B1, TARGET_XBEE_ADDR_64_B2, TARGET_XBEE_ADDR_64_B3,
@@ -149,6 +153,8 @@ static const uint16_t g_target_xbee_network_addr = TARGET_XBEE_ADDR_16;
 
 uint8_t ack_byte_value;
 uint8_t tx_ack_payload[1];
+uint8_t last_command_received = 0xFF; // Stores the last command byte received via XBee
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -276,10 +282,81 @@ static void process_pad_controller_command(XBeeRxFrame_t* received_xbee_frame) {
                 ACTUATE_SERVO(servo_can_id, CLOSE_SERVO);
             }
             break;
+        case CMD_BOARD_STATUS_REQUEST:
+        	Report_All_PadController_States();
+        	STATUS_ALL_Start();
+        	break;
+        case MSG_TYPE_RESET:
+        	NVIC_SystemReset();
         default:
             break;
     }
 }
+
+void send_pad_controller_status_can(uint8_t component_type, uint8_t status_byte) {
+    uint8_t instance = 0; // Usually instance 0 for these statuses
+    uint32_t can_id_29bit;
+    uint8_t xbee_payload[4 + 1]; // 4 bytes ID + 1 byte data
+    size_t xbee_payload_len = 5;
+    uint32_t can_id_for_xbee_32bit;
+
+    // 1. Build the 32-bit CAN ID
+    // Sender=PadCtrl(1), Board=ControlPanel(5), CompType=variable, Inst=0
+    can_id_for_xbee_32bit = build_can_extended_id(
+		short_board_id,
+		SENDER_CONTROL_PANEL,
+        component_type,
+        instance
+    );
+
+//    // 2. Convert to 32-bit shifted format for XBee payload
+//    can_id_for_xbee_32bit = can_id_29bit << 3;
+
+    // 3. Populate XBee payload buffer (Big Endian)
+    xbee_payload[0] = (uint8_t)((can_id_for_xbee_32bit >> 24) & 0xFF);
+    xbee_payload[1] = (uint8_t)((can_id_for_xbee_32bit >> 16) & 0xFF);
+    xbee_payload[2] = (uint8_t)((can_id_for_xbee_32bit >> 8) & 0xFF);
+    xbee_payload[3] = (uint8_t)(can_id_for_xbee_32bit & 0xFF);
+    xbee_payload[4] = status_byte; // Data payload
+
+    // 4. Send via XBee
+    // Use Frame ID 0 for no specific TX status needed for broadcasts
+    int send_status = xbee_handler_send_byte_array(
+        &xbee,
+        &g_target_xbee_ieee_addr,
+        g_target_xbee_network_addr,
+        xbee_payload,
+        xbee_payload_len,
+        0, // Frame ID 0
+        0  // Options
+    );
+
+    if (send_status < 0) {
+        // Log XBee send error (implement your logging)
+        // printf("Error sending CAN status type %d via XBee: %d\n", component_type, send_status);
+    } else {
+        // Log success if needed
+        // printf("Sent CAN status type %d via XBee.\n", component_type);
+    }
+}
+
+void send_servos_power_status_can(bool is_on) {
+    uint8_t status_byte = is_on ? 1 : 0;
+    send_pad_controller_status_can(MSG_TYPE_SERVOS_POWER_STATUS, status_byte);
+}
+
+void Report_All_PadController_States(void) {
+    // Call each individual sender function
+    send_breakwire_status_can(isAutoArmed);
+    send_igniter_status_can(igniterState);
+    // Determine 'auto mode on' based on pcState
+    send_auto_mode_status_can(pcState == PC_AUTO_ON || pcState == PC_DELAY || pcState == PC_FIRE || pcState == PC_OPEN);
+    send_servos_power_status_can(servos_activated);
+    send_pc_state_can(pcState);
+
+    // TODO: Add calls to report status for other components managed by Pad Controller if any
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -288,8 +365,8 @@ static void process_pad_controller_command(XBeeRxFrame_t* received_xbee_frame) {
   */
 int main(void)
 {
-
   /* USER CODE BEGIN 1 */
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -298,31 +375,35 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  // Recommendation: Initialize IWDG here if used
-  // IWDG_Init();
+  // Recommendation: Initialize Independent Watchdog (IWDG) here if used
+  // MX_IWDG_Init(); // Assuming you have this function if IWDG is enabled in CubeMX
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
-  MX_USART6_UART_Init();
+  MX_USART6_UART_Init(); /* This initializes huart6 */
   /* USER CODE BEGIN 2 */
   HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin);
-  HAL_Delay(3000);
+  HAL_Delay(3000); // Initial status indication
   HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin);
 
+  // Enable UsageFault, BusFault, and MemManage Faults
   SCB->SHCSR |= SCB_SHCSR_USGFAULTENA_Msk
               |  SCB_SHCSR_BUSFAULTENA_Msk
               |  SCB_SHCSR_MEMFAULTENA_Msk;
 
   GET_BOARD_UID (board_uid);
+  short_board_id = GET_SHORT_BOARD_ID(board_uid);
 
+  // --- CAN Initialization ---
   if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY) != HAL_OK)
   {
       Error_Handler();
@@ -338,174 +419,194 @@ int main(void)
   canfilterconfig.FilterIdLow = 0x0000;
   canfilterconfig.FilterMaskIdHigh = 0x0000;
   canfilterconfig.FilterMaskIdLow = 0x0000;
-  HAL_CAN_ConfigFilter(&hcan1, &canfilterconfig);
-  HAL_CAN_Start(&hcan1);
-
-  HAL_NVIC_SetPriority(USART6_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(USART6_IRQn);
-
-  xbee_platform_init();
-  xbee_dev_init(&xbee, xbee_platform_serial(), always_awake, NULL); // 'always_awake' needs to be defined or from xbee_actions.h
-  xbee_dev_flowcontrol(&xbee, 0);
-  xbee_cmd_init_device(&xbee);
-  xbee_dev_tick(&xbee);
-  xbee_cmd_tick();
-
-  int status = 0;
-//  int xbee_init_status = 0; // Not used
-  uint8_t last_command_received = 0xFF;
-  do {
-      xbee_dev_tick(&xbee);
-      xbee_cmd_tick();
-      status = xbee_cmd_query_status(&xbee);
-  } while (status == -EBUSY); // Note: Digi XBee library uses negative errno for errors. -EBUSY is typical.
-
-  if (status != 0) {
-      return status; // Or call Error_Handler()
+  if (HAL_CAN_ConfigFilter(&hcan1, &canfilterconfig) != HAL_OK)
+  {
+      Error_Handler();
+  }
+  if (HAL_CAN_Start(&hcan1) != HAL_OK)
+  {
+      Error_Handler();
   }
 
-  xbee_handler_init_rx_queue();
+  // --- UART Interrupt Priority for XBee ---
+  // Ensure USART6 interrupt is enabled with appropriate priority
+  // This is crucial for timely processing of RX data and errors.
+  HAL_NVIC_SetPriority(USART6_IRQn, 5, 0); // Priority 5, Subpriority 0
+  HAL_NVIC_EnableIRQ(USART6_IRQn);
+
+  HAL_Delay(10); // Small delay before XBee initialization
+
+  // --- Initial XBee Platform and Device Initialization ---
+  xbee_platform_init(); // This calls xbee_ser_open for the first time for huart6
+
+  // Initialize the XBee device structure
+  // The 'always_awake' variable is defined in USER CODE BEGIN PV
+  xbee_dev_init(&xbee, xbee_platform_serial(), (bool_t)always_awake, NULL);
+  xbee_dev_flowcontrol(&xbee, 0); // Assuming no hardware flow control (0 = disabled)
+  xbee_cmd_init_device(&xbee);    // Initialize AT command processor for this device
+
+  // Initial check for XBee module readiness
+  int status = 0;
+  uint32_t init_start_time = HAL_GetTick();
+  do {
+      xbee_dev_tick(&xbee); // Allow XBee library to process incoming/outgoing data
+      xbee_cmd_tick();      // Process AT command responses
+      status = xbee_cmd_query_status(&xbee); // Query basic XBee status
+      if ((HAL_GetTick() - init_start_time) > 5000) { // 5-second timeout
+          // printf("Timeout waiting for initial XBee query status.\r\n"); // Requires printf retargeting
+          Error_Handler(); // Or handle appropriately (e.g., log error, retry)
+          break;
+      }
+  } while (status == -EBUSY); // -EBUSY is a typical "busy" response from XBee lib
+
+  if (status != 0) {
+      // printf("Initial XBee query status failed: %d\r\n", status);
+      Error_Handler(); // Or handle appropriately
+  }
+
+  xbee_handler_init_rx_queue(); // Initialize your application's RX queue for XBee frames
   ack_byte_value = Create_Ack();
   prev_ack_send_time_ms = HAL_GetTick();
   g_periodic_ack_frame_id = 0; // Ensure it's initialized
 
+  // --- Board and CAN ID Setup ---
   no2_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N02");
   no3_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N03");
   no4_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N04");
   pyro_board_uid = GET_BOARD_ID_FROM_PNID ("FV-PYRO");
   pt01_board_uid = GET_BOARD_ID_FROM_PNID ("PT-01");
+  pt03_board_uid = GET_BOARD_ID_FROM_PNID ("PT-03");
 
   no2_can_id = GET_CAN_ID_FROM_BOARD_UID (no2_board_uid);
   no3_can_id = GET_CAN_ID_FROM_BOARD_UID (no3_board_uid);
   no4_can_id = GET_CAN_ID_FROM_BOARD_UID (no4_board_uid);
   pyro_can_id = GET_CAN_ID_FROM_BOARD_UID (pyro_board_uid);
   pt01_can_id = GET_CAN_ID_FROM_BOARD_UID (pt01_board_uid);
+  pt03_can_id = GET_CAN_ID_FROM_BOARD_UID (pt03_board_uid);
 
   board_can_ids[0] = no2_can_id;
   board_can_ids[1] = no3_can_id;
   board_can_ids[2] = no4_can_id;
   board_can_ids[3] = pyro_can_id;
   board_can_ids[4] = pt01_can_id;
+  board_can_ids[5] = pt03_can_id;
 
   PAD_CONTROLLER_SETUP_ROUTINE (board_can_ids, NUM_BOARDS);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-    while (1)
-    {
-    /* USER CODE END WHILE */
+  while (1)
+  {
+  /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
-      // Recommendation: Pet the IWDG here if used
-      // IWDG_Refresh();
+  /* USER CODE BEGIN 3 */
+    // Recommendation: Pet the Independent Watchdog here if used
+    // HAL_IWDG_Refresh(&hiwdg); // Assuming hiwdg is your IWDG handle
 
-      xbee_dev_tick(&xbee); // Processes XBee library events, including receiving data and TX status
-	  xbee_cmd_tick();      // Processes AT command responses
-      xbee_handler_service_rx_from_library(); // Moves received data to application queue
+    // --- UART/XBee Re-initialization Check (Robust Recovery) ---
+//    if (g_request_uart6_reinit)
+//    {
+//      // Atomically clear the flag to prevent re-entry if another interrupt occurs during this block
+//      uint32_t primask_status = __get_PRIMASK(); // Store current global interrupt state
+//      __disable_irq();                          // Disable global interrupts
+//      g_request_uart6_reinit = false;           // Clear the flag
+//      __set_PRIMASK(primask_status);            // Restore global interrupt state
+//
+//      // Optional: Log that a re-initialization is occurring
+//      // printf("Attempting UART6 and XBee re-initialization due to error...\r\n");
+//
+//      xbee_serial_t *xbee_uart_port = xbee_platform_serial();
+//      if (xbee_uart_port)
+//      {
+//        uint32_t current_baudrate = xbee_uart_port->baudrate; // Preserve current baudrate
+//
+//        // 1. Close the low-level serial port (calls HAL_UART_DeInit, flushes platform buffers)
+//        xbee_ser_close(xbee_uart_port);
+//        HAL_Delay(50); // Brief delay for peripheral to settle if necessary
+//
+//        // 2. Re-open the low-level serial port
+//        // (calls HAL_UART_Init, resets platform buffers, starts HAL_UART_Receive_IT)
+//        if (xbee_ser_open(xbee_uart_port, current_baudrate) != 0)
+//        {
+//          // printf("FATAL: UART6 re-open (xbee_ser_open) failed during recovery!\r\n");
+//          Error_Handler(); // This is a critical failure if re-open fails
+//        }
+//
+//        // 3. Re-initialize the XBee device context with the re-opened serial port
+//        xbee_dev_init(&xbee, xbee_uart_port, (bool_t)always_awake, NULL);
+//
+//        // 4. Re-run essential XBee post-init steps
+//        xbee_dev_flowcontrol(&xbee, 0); // Re-apply flow control setting
+//        xbee_cmd_init_device(&xbee);    // Re-initialize AT command processor
+//
+//        // 5. Verify XBee module readiness again
+//        int status_reinit = 0;
+//        uint32_t reinit_loop_start_time = HAL_GetTick();
+//        do {
+//            xbee_dev_tick(&xbee); // Allow XBee library to process
+//            xbee_cmd_tick();      // Allow AT command processor to work
+//            status_reinit = xbee_cmd_query_status(&xbee);
+//            if ((HAL_GetTick() - reinit_loop_start_time) > 5000) { // 5-second timeout
+//                // printf("Timeout waiting for XBee query status after re-init.\r\n");
+//                // Error_Handler(); // Or decide on less drastic action for repeated failures
+//                break;
+//            }
+//        } while (status_reinit == -EBUSY);
+//
+//        if (status_reinit != 0) {
+//            // printf("XBee query status failed after re-init: %d\r\n", status_reinit);
+//            // The g_request_uart6_reinit flag is false, so it won't loop here indefinitely.
+//            // The next UART error might trigger this recovery again.
+//            // Consider more robust error counting or alternative recovery if this happens frequently.
+//        } else {
+//            // printf("UART6 and XBee re-initialized successfully after error.\r\n");
+//        }
+//
+//        // 6. Re-initialize application-level XBee handlers and state
+//        xbee_handler_init_rx_queue(); // Reset your application's RX queue
+//
+//        // Reset any other relevant application state related to XBee communication
+//        uint8_t last_command_received_after_reinit = 0xFF; // Local var for clarity
+//        last_command_received = last_command_received_after_reinit; // Reset last command state
+//        ack_byte_value = Create_Ack(); // Recreate ACK if needed
+//        prev_ack_send_time_ms = HAL_GetTick(); // Reset ACK timing
+//        // g_periodic_ack_frame_id = 0; // Reset if this is part of your XBee state
+//
+//      } // end if (xbee_uart_port)
+//      else
+//      {
+//        // This should ideally never happen if xbee_platform_serial() is robust
+//        // printf("FATAL: xbee_platform_serial() returned NULL during recovery!\r\n");
+//        Error_Handler();
+//      }
+//    } // end if (g_request_uart6_reinit)
 
-      if (xbee_handler_is_rx_frame_available()) {
-          if (xbee_handler_rx_frame_dequeue(&current_received_xbee_frame)) {
-              if (current_received_xbee_frame.length > 0) {
-                  last_command_received = current_received_xbee_frame.payload[0];
-              } else {
-                  last_command_received = 0xFF;
-              }
-              process_pad_controller_command(&current_received_xbee_frame);
-          }
-      }
+    // --- Regular XBee Processing and Application Logic ---
+    xbee_dev_tick(&xbee); // Processes XBee library events, RX data, TX status
+	xbee_cmd_tick();      // Processes AT command responses
+    xbee_handler_service_rx_from_library(); // Moves received data to application queue
 
-      Tick_Igniter(last_command_received, &ack_byte_value);
-      PadController_Tick(last_command_received, pyro_board_uid, &ack_byte_value);
-      Tick_Breakwire_LED();
-      FLASH_ALL(board_can_ids, NUM_BOARDS); // This seems to be called very frequently. Ensure it's not blocking.
-
-      current_time_ms = HAL_GetTick();
-
-      // --- Periodic ACK Sending Logic ---
-      if (!g_xbee_target_unreachable && (current_time_ms - prev_ack_send_time_ms >= PERIODIC_ACK_INTERVAL_MS)) {
-    	  if (g_periodic_ack_frame_id == 0) { // Only send if no previous ACK is awaiting TX status
-              tx_ack_payload[0] = ack_byte_value;
-              g_periodic_ack_frame_id = xbee_next_frame_id(&xbee); // Get ID before sending
-
-              if (g_periodic_ack_frame_id == 0) { // Frame ID 0 is not used for TX status requests
-                  // This could happen if xbee_next_frame_id wraps around and lands on 0.
-                  // The library might prevent this, but as a fallback, try getting another one next time.
-                  // Or, simply try to send with frame_id = 1 (auto-assign by library) if this is an issue.
-                  // For now, we'll skip this attempt if ID is 0, and it will retry next interval.
-                  // printf("Failed to get a valid XBee frame ID for ACK. Will retry.\r\n");
-              } else {
-                  // // printf("Attempting to send periodic ACK with Frame ID: %u\r\n", g_periodic_ack_frame_id);
-            	  int send_status = xbee_handler_send_byte_array(&xbee,
-            	                                               &g_target_xbee_ieee_addr,
-            	                                               g_target_xbee_network_addr,
-            	                                               tx_ack_payload,
-            	                                               sizeof(tx_ack_payload),
-            	                                               g_periodic_ack_frame_id,
-            	                                               XBEE_HANDLER_TX_OPT_NONE);
-            	  if (send_status < 0) {
-            	      // Check if the error is due to local TX buffer being full
-            	      // xbee_ser_write now returns -ENOSPC or 0 if buffer full.
-            	      // xbee_frame_write might propagate this or return its own error.
-            	      // Let's assume -ENOSPC is a specific error for "buffer full from driver".
-            	      // The XBee library might also return -EAGAIN.
-            	      if (send_status == -ENOSPC || send_status == -EAGAIN) { // Or if xbee_ser_write returned 0 and that was propagated
-            	          // Local TX buffer full or XBee library is temporarily busy.
-            	          // The XBee library should retry on a subsequent xbee_dev_tick().
-            	          // Do not increment g_xbee_tx_fail_count for this.
-            	          // g_periodic_ack_frame_id remains set for this pending attempt.
-            	          // printf("Periodic ACK: UART TX buffer full or XBee lib busy (Frame ID: %u). Will retry.\r\n", g_periodic_ack_frame_id);
-            	      } else {
-            	          // Other error from XBee library (e.g., bad parameters, internal issue).
-            	          // This attempt to queue has failed more definitively.
-            	          // printf("Error queuing periodic ACK: %d (Frame ID: %u).\r\n", send_status, g_periodic_ack_frame_id);
-            	          g_xbee_tx_fail_count++;
-            	          g_periodic_ack_frame_id = 0; // Reset to allow a new ACK attempt next interval.
-            	      }
-            	  } else {
-            	      // Successfully queued with XBee library (and should be making its way to the non-blocking UART driver).
-            	      g_ack_pending_timestamp = current_time_ms;
-            	      // printf("Periodic ACK successfully queued with Frame ID: %u.\r\n", g_periodic_ack_frame_id);
-            	  }
-            	  prev_ack_send_time_ms = current_time_ms; // Update time for the next interval check
-              }
-          } else {
-              // A previous ACK (g_periodic_ack_frame_id != 0) is still awaiting TX status.
-              // Do not send another one yet. Check for timeout on this pending ACK.
-              if (current_time_ms - g_ack_pending_timestamp > ACK_PENDING_TIMEOUT_MS) {
-                  // printf("Timeout waiting for TX status for ACK Frame ID: %u. Counting as failure.\r\n", g_periodic_ack_frame_id);
-                  g_periodic_ack_frame_id = 0; // Give up on this ACK
-                  g_xbee_tx_fail_count++;
-                  prev_ack_send_time_ms = current_time_ms; // Allow new ACK attempt in next interval
-              }
-          }
-      }
-
-      // --- Check for Max Consecutive Failures ---
-      // This check is now driven by both queuing failures and TX status failures (via g_xbee_tx_fail_count)
-      if (g_xbee_tx_fail_count >= MAX_CONSECUTIVE_XBEE_TX_FAILS && !g_xbee_target_unreachable) {
-          // // printf("Max TX fail count (%lu) reached. Marking target unreachable for %u ms.\r\n", g_xbee_tx_fail_count, XBEE_RETRY_PERIOD_MS);
-          g_xbee_target_unreachable = true;
-          g_periodic_ack_frame_id = 0; // Clear any pending ACK ID as we are stopping transmissions
-          // The unreachable_timestamp logic below will handle the start of the backoff period.
-      }
-
-      // --- Target Unreachable / Retry Logic ---
-      if (g_xbee_target_unreachable) {
-          static uint32_t unreachable_timestamp = 0;
-          if (unreachable_timestamp == 0) {
-              unreachable_timestamp = HAL_GetTick();
-              // // printf("Target marked unreachable. Starting backoff period.\r\n");
-          }
-          if (HAL_GetTick() - unreachable_timestamp > XBEE_RETRY_PERIOD_MS) {
-              // printf("XBee retry period elapsed. Attempting to resend to target.\r\n");
-              g_xbee_target_unreachable = false;
-              g_xbee_tx_fail_count = 0;
-              unreachable_timestamp = 0;
-              prev_ack_send_time_ms = HAL_GetTick() - PERIODIC_ACK_INTERVAL_MS; // Force immediate ACK attempt
-          }
-      }
+    if (xbee_handler_is_rx_frame_available()) {
+        if (xbee_handler_rx_frame_dequeue(&current_received_xbee_frame)) {
+            if (current_received_xbee_frame.length > 0) {
+                // Assuming payload[0] is the command byte
+                last_command_received = current_received_xbee_frame.payload[0];
+            } else {
+                last_command_received = 0xFF; // Indicate no valid command or empty frame
+            }
+            process_pad_controller_command(&current_received_xbee_frame);
+        }
     }
+
+    Tick_Igniter(last_command_received, &ack_byte_value);
+    PadController_Tick(last_command_received, pyro_board_uid, &ack_byte_value);
+    Tick_Breakwire_LED();
+
+    current_time_ms = HAL_GetTick(); // Update current time
+    FLASH_ALL (board_can_ids, NUM_BOARDS);
+    STATUS_ALL_Process(board_can_ids); // Corrected function name based on your snippet
+  }
   /* USER CODE END 3 */
 }
 
@@ -566,7 +667,7 @@ static void MX_CAN1_Init(void)
 
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 40;
+  hcan1.Init.Prescaler = 8;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan1.Init.TimeSeg1 = CAN_BS1_2TQ;
@@ -603,7 +704,7 @@ static void MX_USART6_UART_Init(void)
 
   /* USER CODE END USART6_Init 1 */
   huart6.Instance = USART6;
-  huart6.Init.BaudRate = 9600;
+  huart6.Init.BaudRate = 38400;
   huart6.Init.WordLength = UART_WORDLENGTH_8B;
   huart6.Init.StopBits = UART_STOPBITS_1;
   huart6.Init.Parity = UART_PARITY_NONE;

@@ -76,8 +76,8 @@ bool send_port_a = false;
 bool send_port_b = false;
 float port_a_val = 0.0f;
 float port_b_val = 0.0f;
-uint16_t port_a_config = (ADS1118_CONFIG_DEFAULT | (0b111 << ADS1118_CONFIG_BIT_MUX) | (1 << ADS1118_CONFIG_BIT_SS) | (0b000 << 9)) & 0xFBFF;
-uint16_t port_b_config = (ADS1118_CONFIG_DEFAULT | (0b101 << ADS1118_CONFIG_BIT_MUX) | (1 << ADS1118_CONFIG_BIT_SS) | (0b000 << 9)) & 0xFBFF;
+uint16_t port_a_config = (ADS1118_CONFIG_DEFAULT | (0b101 << ADS1118_CONFIG_BIT_MUX) | (1 << ADS1118_CONFIG_BIT_SS) | (0b000 << 9)) & 0xFBFF;
+uint16_t port_b_config = (ADS1118_CONFIG_DEFAULT | (0b111 << ADS1118_CONFIG_BIT_MUX) | (1 << ADS1118_CONFIG_BIT_SS) | (0b000 << 9)) & 0xFBFF;
 uint16_t port_a_rx_buf[] = {0, 0};
 uint16_t port_b_rx_buf[] = {0, 0};
 float v_fs = 5.0f;
@@ -94,18 +94,39 @@ static void MX_SPI1_Init(void);
 static void MX_TIM14_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
-
+/* USER CODE BEGIN PFP */
+uint32_t frequency_to_period_ms(uint32_t frequency);
 static void GET_PORT_A_READING(uint16_t config);
 static void GET_PORT_B_READING(uint16_t config);
 static float CONVERT_ADC_READING(PtConfig *pt, int16_t raw_val);
 static void INSERT_FLOAT_TO_TX_DATA(float val);
-/* USER CODE BEGIN PFP */
-uint32_t frequency_to_period_ms(uint32_t frequency);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void send_pt_status_can(uint16_t adc_val, uint8_t short_board_id, CAN_HandleTypeDef* hcan, uint8_t instance_val) {
+	uint8_t status_bytes[2];
+	uint8_t temp_raw[2];
 
+	memcpy(temp_raw, &adc_val, sizeof(adc_val));
+	status_bytes[0] = temp_raw[1];
+	status_bytes[1] = temp_raw[0];
+
+	uint8_t sender_id = short_board_id;
+    uint8_t target_board_id = SENDER_PAD_CONTROLLER;
+    uint8_t msg_type_val = MSG_TYPE_PRESSURE; // Using existing general servo type
+
+    uint32_t base_ext_id_32bit_shifted = build_can_extended_id(sender_id, target_board_id, msg_type_val, instance_val);
+    uint32_t base_ext_id_29bit = base_ext_id_32bit_shifted >> 3;
+    uint32_t ack_ext_id_29bit = base_ext_id_29bit | CAN_ID_ACK_FLAG_29BIT;
+    uint32_t final_ext_id_32bit_shifted_for_send = ack_ext_id_29bit << 3;
+
+    HAL_StatusTypeDef status = send_can_msg(final_ext_id_32bit_shifted_for_send, status_bytes, 2, hcan);
+
+    if (status != HAL_OK) {
+        // Handle CAN send error
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -146,31 +167,30 @@ int main(void)
   /* USER CODE BEGIN 2 */
   GET_BOARD_UID(board_id);
   short_board_id = GET_SHORT_BOARD_ID(board_id);
-  // Configure filter for extended ID
-    CAN_FilterTypeDef filter;
-    filter.FilterActivation = CAN_FILTER_ENABLE;
-    filter.FilterBank = 0;
-    filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-    filter.FilterMode = CAN_FILTERMODE_IDMASK;
-    filter.FilterScale = CAN_FILTERSCALE_32BIT;
 
-    // Page 1091 in STM32F405 Reference Manual
-    // first 29 are the identifier, then IDE, then RTR, then 0
+  CAN_FilterTypeDef filter;
+  filter.FilterActivation = CAN_FILTER_ENABLE;
+  filter.FilterBank = 0;
+  filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  filter.FilterMode = CAN_FILTERMODE_IDMASK;
+  filter.FilterScale = CAN_FILTERSCALE_32BIT;
 
-    // we only care about the 8 bits to make sure that its talking to the right board, so we use that
-    uint32_t canIdFilter = (short_board_id << 16);
-    uint32_t canIdMask = 0x00FF0000;
 
-    // Set IDE bit in both filter and mask
-    canIdFilter |= CAN_ID_EXT;
-    canIdFilter |= CAN_RTR_DATA;
-    canIdMask |= CAN_ID_EXT;
-    canIdMask |= CAN_RTR_DATA;
+  uint32_t canIdFilter = ((uint32_t)short_board_id << 16);
+  canIdFilter |= CAN_ID_EXT;
+  uint32_t canIdMask = (0xFFUL << 16);
+  canIdMask |= CAN_ID_EXT;
+  canIdMask |= CAN_RTR_DATA;
+  canIdMask |= (1UL << 31);
+  filter.FilterIdHigh = (uint16_t)(canIdFilter >> 16);
+  filter.FilterIdLow = (uint16_t)(canIdFilter & 0xFFFF);
+  filter.FilterMaskIdHigh = (uint16_t)(canIdMask >> 16);
+  filter.FilterMaskIdLow = (uint16_t)(canIdMask & 0xFFFF);
 
-    filter.FilterIdHigh = (canIdFilter >> 16) & 0xFFFF;
-    filter.FilterIdLow = canIdFilter & 0xFFFF;
-    filter.FilterMaskIdHigh = (canIdMask >> 16) & 0xFFFF;
-    filter.FilterMaskIdLow = canIdMask & 0xFFFF;
+//  filter.FilterIdHigh = (uint16_t)(0x0000);
+//  filter.FilterIdLow = (uint16_t)(0x0000);
+//  filter.FilterMaskIdHigh = (uint16_t)(0x0000);
+//  filter.FilterMaskIdLow = (uint16_t)(0x0000);
 
     if (HAL_CAN_ConfigFilter(&hcan, &filter) != HAL_OK) {
         Error_Handler();
@@ -248,6 +268,9 @@ int main(void)
 //  int16_t buf[] = { 0, 0 };
 //  float res = 0.0f;
 
+  uint8_t wasA = 0; // Start with Port A attempt
+   bool port_a_is_active = (PT_A != NULL && htim2.Init.Period != 0);
+   bool port_b_is_active = (PT_B != NULL && htim3.Init.Period != 0);
  while (1)
   {
 //      if (adc_read_cplt && (!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4))) {
@@ -271,23 +294,58 @@ int main(void)
 //         start_read_adc = 0;
 //      }
 
-	 GET_PORT_A_READING(port_a_config);
-	 GET_PORT_B_READING(port_b_config);
-	  if (flash_signal_cmd) {
-		  flash_signal_cmd = Tick_SIGNAL(flash_signal_cmd);
-	  }
-	  if (send_port_a) {
-		  float data = CONVERT_ADC_READING(PT_A, port_a_val);
-		  INSERT_FLOAT_TO_TX_DATA(data);
-		  send_can_msg(pt_1_can_id, tx_data, sizeof(data), &hcan);
-		  send_port_a = false;
-	  }
-	  if (send_port_b) {
-		  float data = CONVERT_ADC_READING(PT_B, port_b_val);
-		  INSERT_FLOAT_TO_TX_DATA(data);
-		  send_can_msg(pt_2_can_id, tx_data, sizeof(data), &hcan);
-		  send_port_b = false;
-	  }
+	 if (!wasA) { // Attempt to read Port A
+		 if (port_a_is_active) {
+			 GET_PORT_A_READING(port_a_config);
+		 } else if (port_b_is_active) { // If A is not active but B is, switch to B
+			 wasA = 1; // Next iteration will try B
+			 // GET_PORT_B_READING(port_b_config); // Or try immediately
+		 }
+		 // If neither is active, it will do nothing here until flags are set by other means
+	 } else { // wasA == 1, Attempt to read Port B
+		 if (port_b_is_active) {
+			 GET_PORT_B_READING(port_b_config);
+		 } else {
+			 // Port B is not active, so switch back to A logic
+			 wasA = 0;
+		 }
+	 }
+
+	 if (flash_signal_cmd) {
+		 flash_signal_cmd = Tick_SIGNAL(flash_signal_cmd); // Assuming Tick_SIGNAL handles its own logic
+	 }
+
+	 if (send_port_a) {
+		 if (port_a_is_active) { // Ensure PT_A is valid before using
+//			 float data = CONVERT_ADC_READING(PT_A, port_a_val);
+//			 INSERT_FLOAT_TO_TX_DATA(data);
+//			 // Assuming pt_1_can_id is for PT_A if PT_A was configured from pt_1_can_id
+//			 // You might need a more robust way to get the correct CAN ID for PT_A
+//			 uint32_t current_pt_a_can_id = (PT_A == GET_PT_CONFIG(pt_1_can_id) && GET_PT_CONFIG(pt_1_can_id)->port == 'A') ? pt_1_can_id : pt_2_can_id;
+//			 send_can_msg(current_pt_a_can_id, tx_data, sizeof(data), &hcan);
+
+			 send_pt_status_can(port_a_val, short_board_id, &hcan, 1);
+		 }
+		 send_port_a = false; // Clear flag regardless
+		 if (port_b_is_active) { // Only switch if Port B is a valid target
+			 wasA = 1;
+		 } else {
+			 wasA = 0; // Stay on A (or try A again if A is also the only active port)
+		 }
+	 }
+
+	 if (send_port_b) {
+		 if (port_b_is_active) { // Ensure PT_B is valid before using
+//			 float data = CONVERT_ADC_READING(PT_B, port_b_val);
+//			 INSERT_FLOAT_TO_TX_DATA(data);
+//			 // Assuming pt_2_can_id is for PT_B if PT_B was configured from pt_2_can_id
+//			 uint32_t current_pt_b_can_id = (PT_B == GET_PT_CONFIG(pt_2_can_id) && GET_PT_CONFIG(pt_2_can_id)->port == 'B') ? pt_2_can_id : pt_1_can_id;
+//			 send_can_msg(current_pt_b_can_id, tx_data, sizeof(data), &hcan);
+			 send_pt_status_can(port_b_val, short_board_id, &hcan, 2);
+		 }
+		 send_port_b = false; // Clear flag regardless
+		 wasA = 0; // Always attempt to switch back to A after B
+	 }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -348,11 +406,11 @@ static void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN;
-  hcan.Init.Prescaler = 6;
+  hcan.Init.Prescaler = 24;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_2TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
   hcan.Init.AutoWakeUp = DISABLE;
@@ -613,16 +671,23 @@ float temperature_code_to_temperature(int16_t temperature_code) {
 //    return status;
 //}
 
+// In main.c
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
-	if (adc.config == port_a_config) {
-		port_a_val = port_a_rx_buf[0];
-		adc_reading = false;
-		port_a_read_cplt = true;
-	}
-	if (adc.config == port_b_config) {
-		port_b_val = port_b_rx_buf[0];
-		adc_reading = false;
-		port_b_read_cplt = true;
+    // This callback is now ONLY for Ads1118_Transmit (data read) completion.
+    HAL_GPIO_WritePin(adc.cs_gpio_port, adc.cs_pin, GPIO_PIN_SET); // De-assert CS pin
+
+	if (hspi->Instance == SPI1) { // Check if it's the correct SPI peripheral
+		if (adc.config == port_a_config) {
+			port_a_val = port_a_rx_buf[0];       // Actual ADC conversion result
+			// adc.config_readback = port_a_rx_buf[1]; // Optional: store/check config read back
+			adc_reading = false;
+			port_a_read_cplt = true;
+		} else if (adc.config == port_b_config) { // Use "else if"
+			port_b_val = port_b_rx_buf[0];       // Actual ADC conversion result
+			// adc.config_readback = port_b_rx_buf[1]; // Optional: store/check config read back
+			adc_reading = false;
+			port_b_read_cplt = true;
+		}
 	}
 }
 

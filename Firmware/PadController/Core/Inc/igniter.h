@@ -12,6 +12,13 @@
 #include "stm32f4xx_hal.h"
 #include "utils/radio_utils.h"
 
+void send_igniter_status_can(IgniterState_t state) {
+    // Assuming IgniterState_t enum values match Python expectations
+    // (e.g., IGNITER_DEACTIVATED=1, IGNITER_ACTIVATED=2)
+    uint8_t status_byte = (uint8_t)state;
+    send_pad_controller_status_can(MSG_TYPE_IGNITER_STATUS, status_byte);
+}
+
 static inline void Tick_Igniter(uint8_t cmd, uint8_t* ackPtr) {
 
     switch (igniterState) {
@@ -34,7 +41,7 @@ static inline void Tick_Igniter(uint8_t cmd, uint8_t* ackPtr) {
 
       case IGNITER_ACTIVATED:
 
-        if (((cmd == DEACTIVATE_IGNITER) && !isStarted) || (cmd == ABORT)) {
+        if ((cmd == DEACTIVATE_IGNITER) && !isStarted) {
           igniterState = IGNITER_DEACTIVATED;
         } else {
           igniterState = IGNITER_ACTIVATED;

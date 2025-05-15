@@ -59,18 +59,19 @@ bool Tick_SIGNAL(bool flash_signal_cmd) {
 		flash_timer = HAL_GetTick();
 	}
 
-	uint32_t current_time = HAL_GetTick();
-	if (current_time - previous_flash > 250) {
-		previous_flash = current_time;
-		STATUS_IND_Toggle();
-	}
+	if (flash_signal_cmd) {
+		uint32_t current_time = HAL_GetTick();
+		if (current_time - previous_flash > 250) {
+			previous_flash = current_time;
+			STATUS_IND_Toggle();
+		}
 
-	if (current_time - flash_timer > MAX_FLASH_TIME) {
-		flash_timer = 0;
-		flash_signal_cmd = 0;
-		STATUS_IND_Off();
+		if (current_time - flash_timer > MAX_FLASH_TIME) {
+			flash_timer = 0;
+			flash_signal_cmd = 0;
+			STATUS_IND_Off();
+		}
 	}
-
 	return flash_signal_cmd;
 }
 

@@ -66,12 +66,13 @@ static uint8_t short_board_id;
 
 volatile SERVO_CMD servo_cmd = CLOSE_SERVO;
 volatile uint8_t servo_instance = -1;
-volatile THERMO_CMD thermo_cmd = TEMP_WAIT;
+volatile THERMO_CMD thermo_cmd = -1;
 volatile uint8_t thermo_instance = -1;
 volatile HEATER_CMD heater_cmd = H_OFF;
 volatile uint8_t heater_instance = -1;
 volatile bool new_command_received = 0;
 volatile bool flash_signal_cmd = 0;
+volatile bool board_status_cmd = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -132,7 +133,7 @@ void TestHeater(Heater* heater) {
 
 void TestThermocouple (Thermocouple* thermo){
 	while (1) {
-		Tick_THERMO(-1, thermo);
+		Tick_THERMO(0, thermo);
 		double temp = thermo->temperature;
 		HAL_Delay(200);
 	}
@@ -149,6 +150,16 @@ void TestHeaterAuto (Heater* heater, Thermocouple* thermo) {
 
 void TestServoAndHeater() {
 
+}
+
+void Board_Status_Servo (Servo* servo, Thermocouple* thermo, Heater* heater) {
+    // Call each individual sender function
+    send_servo_status_can(servo, short_board_id, &hcan);
+//    send_heater_status_can(heater, short_board_id, hcan);
+//    send_thermo_mode_status_can(thermo, short_board_id, hcan);
+
+
+    // TODO: Add calls to report status for other components managed by Pad Controller if any
 }
 
 /* USER CODE END 0 */
@@ -199,15 +210,6 @@ int main(void)
   filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
   filter.FilterMode = CAN_FILTERMODE_IDMASK;
   filter.FilterScale = CAN_FILTERSCALE_32BIT;
-
-  // Page 1091 in STM32F405 Reference Manual
-  // first 29 are the identifier, then IDE, then RTR, then 0
-
-  // we only care about the 8 bits to make sure that its talking to the right board, so we use that
-  uint32_t canIdFilter = (short_board_id << 16);
-  uint32_t canIdMask = 0x00FF0000;
-
-
   uint32_t canIdFilter = ((uint32_t)short_board_id << 16);
   canIdFilter |= CAN_ID_EXT;
   uint32_t canIdMask = (0xFFUL << 16);
@@ -286,11 +288,6 @@ int main(void)
   if (!heater) {
 	  CRITIAL_ERROR_GENERIC_On();
   }
-  // struct Heater* heater = construct_header (uid);
-  // struct Thermocouple* thermo = construct_thermo (uid);
-  // ** COMMENT OUT IF NOT TESTING COMPONENTS ** //
-
-
 
   // ** TESTING FUNCTIONS AT TOP OF FILE ** //
 //  TestServo (servo);
@@ -302,22 +299,31 @@ int main(void)
 
 
   // will run through a set of test commands to see if everything works then repeat
+  uint32_t prev_time = HAL_GetTick ();
   while (1)
   {
     // Execute the current commands on each loop iteration
-    Tick_SERVO(servo_cmd, servo);
-    Tick_THERMO(thermo_cmd, thermo);
-    Tick_HEATER(heater_cmd, heater);
+	if (HAL_GetTick () - prev_time >= 50) {
+		prev_time = HAL_GetTick ();
+		Tick_SERVO(servo_cmd, servo);
+		Tick_THERMO(thermo_cmd, thermo);
+//		Tick_HEATER(heater_cmd, heater);
 
-    // Visual feedback when new command is received (optional)
-    if (new_command_received) {
-        STATUS_IND_Toggle();
-        new_command_received = 0;
-    }
+		// Visual feedback when new command is received (optional)
+		if (new_command_received) {
+			STATUS_IND_Toggle();
+			new_command_received = 0;
+		}
 
-    // more visual feedback
+		// more visual feedback
 
-    flash_signal_cmd = Tick_SIGNAL (flash_signal_cmd);
+		flash_signal_cmd = Tick_SIGNAL (flash_signal_cmd);
+
+		if (board_status_cmd) {
+			Board_Status_Servo (servo, thermo, heater);
+			board_status_cmd = 0;
+		}
+	}
   }
     /* USER CODE END WHILE */
 
@@ -434,7 +440,7 @@ static void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN;
-  hcan.Init.Prescaler = 120;
+  hcan.Init.Prescaler = 24;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan.Init.TimeSeg1 = CAN_BS1_2TQ;
@@ -640,7 +646,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-/* USER CODE BEGIN 4 */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 //	STATUS_IND_Toggle();
@@ -662,12 +667,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     if (board_id == short_board_id) {
         // Set command based on component type
         bool is_incoming_ack = (received_id_29bit & (CAN_ID_ACK_FLAG_29BIT)) != 0;
-        if (!is_incoming_ack) {
-        	HAL_StatusTypeDef ack_status = send_can_ack(received_id_29bit, &payload, 0, hcan);
-        	if (ack_status != HAL_OK) {
-				// Optional: Log or handle ACK transmission failure
-        		is_incoming_ack = (received_id_29bit & (CAN_ID_ACK_FLAG_29BIT)) != 0;
-        	}
+        if (is_incoming_ack) {
+        	return;
+//        	HAL_StatusTypeDef ack_status = send_can_ack(received_id_29bit, &payload, 0, hcan);
+//        	if (ack_status != HAL_OK) {
+//				// Optional: Log or handle ACK transmission failure
+//        		is_incoming_ack = (received_id_29bit & (CAN_ID_ACK_FLAG_29BIT)) != 0;
+//        	}
         }
 
         switch (msg_type) {
@@ -701,6 +707,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             case MSG_TYPE_FLASH_SIGNAL:
             	flash_signal_cmd = 1;
             	break;
+
+            case MSG_TYPE_BOARD_STATUS_RESPONSE:
+            	board_status_cmd = 1;
             default:
                 // Unknown component type
                 break;

@@ -39,6 +39,7 @@ typedef struct  {
 //Function Prototypes
 void Tick_SERVO (uint8_t cmd, Servo* servo);
 Servo* construct_servo (const uint32_t can_id, const TIM_HandleTypeDef *timer);
+void send_servo_status_can(Servo* servo, uint8_t short_board_id, CAN_HandleTypeDef *hcan);
 
 /**
   * @brief  The construct_servo function is used to create a servo.
@@ -50,6 +51,26 @@ Servo* construct_servo (const uint32_t can_id, const TIM_HandleTypeDef *timer);
   *
   * @retval struct Servo* returns a pointer to the constructed servo.
   */
+
+void send_servo_status_can(Servo* servo, uint8_t short_board_id, CAN_HandleTypeDef* hcan) {
+    uint8_t status_byte = (uint8_t) servo->state; // 1 = armed, 0 = not armed
+    uint8_t sender_id = short_board_id;
+    uint8_t target_board_id = SENDER_PAD_CONTROLLER;
+    uint8_t msg_type_val = MSG_TYPE_SERVO; // Using existing general servo type
+    uint8_t instance_val = 1;
+
+    uint32_t base_ext_id_32bit_shifted = build_can_extended_id(sender_id, target_board_id, msg_type_val, instance_val);
+    uint32_t base_ext_id_29bit = base_ext_id_32bit_shifted >> 3;
+    uint32_t ack_ext_id_29bit = base_ext_id_29bit | CAN_ID_ACK_FLAG_29BIT;
+    uint32_t final_ext_id_32bit_shifted_for_send = ack_ext_id_29bit << 3;
+
+    HAL_StatusTypeDef status = send_can_msg(final_ext_id_32bit_shifted_for_send, &status_byte, 1, hcan);
+
+    if (status != HAL_OK) {
+        // Handle CAN send error
+    }
+}
+
 Servo* construct_servo (const uint32_t can_id, const TIM_HandleTypeDef *timer) {
     ServoConfig *sc = GET_SERVO_CONFIG(can_id);
     if (!sc) {

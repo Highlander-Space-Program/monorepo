@@ -30,19 +30,19 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim.h \
  ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim_ex.h \
  ../Core/Inc/ADS1118.h \
- C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/config.h \
- C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/sensor_board_config.h \
- C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/components.h \
- C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/thermo_config.h \
- C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/heater_config.h \
- C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/servo_config.h \
- C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/pt_config.h \
- C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/board_config.h \
- C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/pad_config.h \
- C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/flight_config.h \
- C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/pt_config.h \
- C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/utils/board_utils.h \
- C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/utils/can_utils.h
+ /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/config.h \
+ /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/sensor_board_config.h \
+ /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/components.h \
+ /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/thermo_config.h \
+ /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/heater_config.h \
+ /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/servo_config.h \
+ /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/pt_config.h \
+ /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/board_config.h \
+ /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/pad_config.h \
+ /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/flight_config.h \
+ /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/pt_config.h \
+ /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/utils/board_utils.h \
+ /Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/utils/can_utils.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal.h:
 ../Core/Inc/stm32f0xx_hal_conf.h:
@@ -75,16 +75,16 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim.h:
 ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim_ex.h:
 ../Core/Inc/ADS1118.h:
-C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/config.h:
-C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/sensor_board_config.h:
-C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/components.h:
-C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/thermo_config.h:
-C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/heater_config.h:
-C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/servo_config.h:
-C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/pt_config.h:
-C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/board_config.h:
-C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/pad_config.h:
-C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/flight_config.h:
-C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/config/pt_config.h:
-C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/utils/board_utils.h:
-C:/Users/zan/Desktop/Alex/HSP/monorepo/Firmware/coreutils/utils/can_utils.h:
+/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/config.h:
+/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/sensor_board_config.h:
+/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/components.h:
+/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/thermo_config.h:
+/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/heater_config.h:
+/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/servo_config.h:
+/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/pt_config.h:
+/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/board_config.h:
+/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/pad_config.h:
+/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/flight_config.h:
+/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/config/pt_config.h:
+/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/utils/board_utils.h:
+/Users/brandonmarcus/Desktop/UCR/SPACE/monorepo/Firmware/coreutils/utils/can_utils.h:
