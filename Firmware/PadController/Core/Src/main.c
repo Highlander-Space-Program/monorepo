@@ -365,6 +365,7 @@ void Report_All_PadController_States(void) {
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -389,7 +390,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
-  MX_USART6_UART_Init(); /* This initializes huart6 */
+  MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin);
   HAL_Delay(3000); // Initial status indication
@@ -498,9 +499,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-  /* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-  /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
     // Recommendation: Pet the Independent Watchdog here if used
     // HAL_IWDG_Refresh(&hiwdg); // Assuming hiwdg is your IWDG handle
 
@@ -704,7 +705,7 @@ static void MX_USART6_UART_Init(void)
 
   /* USER CODE END USART6_Init 1 */
   huart6.Instance = USART6;
-  huart6.Init.BaudRate = 38400;
+  huart6.Init.BaudRate = 115200;
   huart6.Init.WordLength = UART_WORDLENGTH_8B;
   huart6.Init.StopBits = UART_STOPBITS_1;
   huart6.Init.Parity = UART_PARITY_NONE;

@@ -20,7 +20,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
-#include "stdbool.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -366,5 +365,4 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
   // Add else if for other UARTs if they have errors
 }
 
-/* USER CODE END 1 */
 /* USER CODE END 1 */
