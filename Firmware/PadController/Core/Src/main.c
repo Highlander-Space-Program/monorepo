@@ -54,7 +54,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define NUM_BOARDS 6
+#define NUM_BOARDS 7
 #define XBEE_DEVICE_INIT_TIMEOUT_MS 10000 // Timeout for XBee library initial handshake with module
 #define XBEE_AT_COMMAND_TIMEOUT_MS  5000  // Default timeout for AT commands sent via handler
 
@@ -128,6 +128,7 @@ uint32_t* no4_board_uid;
 uint32_t* pyro_board_uid;
 uint32_t* pt01_board_uid;
 uint32_t* pt03_board_uid;
+uint32_t* fc01_board_uid;
 
 uint32_t no2_can_id;
 uint32_t no3_can_id;
@@ -135,6 +136,7 @@ uint32_t no4_can_id;
 uint32_t pyro_can_id;
 uint32_t pt01_can_id;
 uint32_t pt03_can_id;
+uint32_t fc01_can_id;
 
 uint32_t board_can_ids[NUM_BOARDS];
 
@@ -477,6 +479,7 @@ int main(void)
   pyro_board_uid = GET_BOARD_ID_FROM_PNID ("FV-PYRO");
   pt01_board_uid = GET_BOARD_ID_FROM_PNID ("PT-01");
   pt03_board_uid = GET_BOARD_ID_FROM_PNID ("PT-03");
+  fc01_board_uid = GET_BOARD_ID_FROM_PNID ("FC-01");
 
   no2_can_id = GET_CAN_ID_FROM_BOARD_UID (no2_board_uid);
   no3_can_id = GET_CAN_ID_FROM_BOARD_UID (no3_board_uid);
@@ -484,6 +487,7 @@ int main(void)
   pyro_can_id = GET_CAN_ID_FROM_BOARD_UID (pyro_board_uid);
   pt01_can_id = GET_CAN_ID_FROM_BOARD_UID (pt01_board_uid);
   pt03_can_id = GET_CAN_ID_FROM_BOARD_UID (pt03_board_uid);
+  fc01_can_id = GET_CAN_ID_FROM_BOARD_UID (fc01_board_uid);
 
   board_can_ids[0] = no2_can_id;
   board_can_ids[1] = no3_can_id;
@@ -491,6 +495,7 @@ int main(void)
   board_can_ids[3] = pyro_can_id;
   board_can_ids[4] = pt01_can_id;
   board_can_ids[5] = pt03_can_id;
+  board_can_ids[6] = fc01_can_id;
 
   PAD_CONTROLLER_SETUP_ROUTINE (board_can_ids, NUM_BOARDS);
   /* USER CODE END 2 */
@@ -730,8 +735,8 @@ static void MX_USART6_UART_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -770,8 +775,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(BRK_CONT_GPIO_Port, &GPIO_InitStruct);
 
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */

@@ -139,6 +139,7 @@ uint32_t* GET_BOARD_ID_FROM_PNID(char* pnid) {
     ThermoConfig* thermo_lookup_table = GET_THERMO_CONFIGS();
     HeaterConfig* heater_lookup_table = GET_HEATER_CONFIGS();
     PtConfig* pt_lookup_table = GET_PT_CONFIGS();
+    BoardConfig* board_lookup_table = GET_BOARD_CONFIGS();
 
     // Check servo configurations
     for (int i = 0; i < GET_NUM_SERVO_CONFIGS(); i++) {
@@ -165,6 +166,12 @@ uint32_t* GET_BOARD_ID_FROM_PNID(char* pnid) {
     for (int i = 0; i < GET_NUM_PT_CONFIGS(); i++) {
     	if (strcmp(pnid, pt_lookup_table[i].pnid) == 0) {
     		return pt_lookup_table[i].board_uid;
+    	}
+    }
+
+    for (int i = 0; i < GET_NUM_BOARD_CONFIGS(); i++) {
+    	if (strcmp(pnid, board_lookup_table[i].pnid) == 0) {
+    		return board_lookup_table[i].uid;
     	}
     }
 
