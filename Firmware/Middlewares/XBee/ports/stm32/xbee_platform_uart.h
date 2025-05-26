@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------------
-// xbee_platform_uart.h – Header for STM32F4 (UART6) port layer for Digi ANSI‐C XBee library
+// xbee_platform_uart.h – Header for STM32F4 (UART) port layer for Digi ANSI‐C XBee library
 // -----------------------------------------------------------------------------
 //  * Declares public functions for the XBee UART platform interface.
 //  * These functions provide the xbee_ser_*() API required by the Digi XBee library,
@@ -228,6 +228,7 @@ uint32_t xbee_seconds_timer(void);
  */
 xbee_serial_t *xbee_platform_serial(void);
 
+void xbee_platform_config(UART_HandleTypeDef *huart, uint32_t baud);
 
 #ifdef __cplusplus
 }

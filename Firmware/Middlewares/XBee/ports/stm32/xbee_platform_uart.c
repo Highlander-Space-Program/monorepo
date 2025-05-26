@@ -18,11 +18,12 @@
 // -----------------------------------------------------------------------------
 // 1.  Platform‐specific serial descriptor
 // -----------------------------------------------------------------------------
-extern UART_HandleTypeDef huart6; // Provided by CubeMX‐generated usart.c
+//extern UART_HandleTypeDef huart6; // Provided by CubeMX‐generated usart.c
 // Ensure api_escape is part of your xbee_serial_t definition if you use the s->api_escape check.
 // Example: typedef struct xbee_serial_s { UART_HandleTypeDef *huart; uint32_t baudrate; bool_t api_escape; } xbee_serial_t;
 //static xbee_serial_t xbee_port = { .huart = &huart6, .baudrate = 38400 /*, .api_escape = TRUE */ };
-static xbee_serial_t xbee_port = { .huart = &huart6, .baudrate = 115200 /*, .api_escape = TRUE */ };
+//static xbee_serial_t xbee_port = { .huart = &huart6, .baudrate = 115200 /*, .api_escape = TRUE */ };
+static xbee_serial_t xbee_port = { .huart = NULL, .baudrate = 0 };
 
 // -----------------------------------------------------------------------------
 // 1a.  TX DEBUG RING (original, kept for debugging frame contents)
@@ -444,16 +445,25 @@ int xbee_ser_flowcontrol (xbee_serial_t *s, bool_t en) { (void)s; (void)en; retu
 int xbee_ser_set_rts     (xbee_serial_t *s, bool_t a ) { (void)s; (void)a ; return 0; }
 int xbee_ser_get_cts     (xbee_serial_t *s)            { (void)s; return 1; } // Assuming CTS is always asserted (ready)
 
+void xbee_platform_config(UART_HandleTypeDef *huart, uint32_t baud)
+{
+    xbee_port.huart    = huart;
+    xbee_port.baudrate = baud;
+}
+
 // -----------------------------------------------------------------------------
 // 10.  Convenience init wrapper & Timer functions (largely unchanged)
 // -----------------------------------------------------------------------------
 void xbee_platform_init(void) {
     // Assuming huart6 is initialized by MX_USART6_UART_Init() from main.c before this.
     // Also, NVIC for USART6_IRQn should be enabled before xbee_ser_open is called.
-    if (xbee_ser_open(&xbee_port, xbee_port.baudrate) != 0) {
-        // printf("FATAL: XBee platform_init failed to open serial port!\r\n");
-        // Error_Handler(); // Or your application's error handling
-    }
+	if (! xbee_port.huart) {
+		Error_Handler();
+	}
+
+	if (xbee_ser_open(&xbee_port, xbee_port.baudrate) != 0) {
+		// TODO: Error_Handler() or report failure
+	}
 }
 
 uint32_t xbee_millisecond_timer(void) {

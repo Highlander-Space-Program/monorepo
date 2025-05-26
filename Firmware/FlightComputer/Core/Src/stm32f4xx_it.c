@@ -42,7 +42,6 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 extern uint8_t g_hal_rx_byte_buffer;
-extern volatile bool_t g_request_uart6_reinit;
 
 /* USER CODE END PV */
 
@@ -246,7 +245,7 @@ void UART5_IRQHandler(void)
 /* USER CODE BEGIN 1 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  if (huart->Instance == USART5) // Or your specific XBee UART instance
+  if (huart->Instance == UART5) // Or your specific XBee UART instance
   {
     // A byte has been received into g_hal_rx_byte_buffer (defined in xbee_platform_uart.c)
     xbee_platform_hal_enqueue_rx_byte(g_hal_rx_byte_buffer);
@@ -265,7 +264,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-  if (huart->Instance == USART5) // Or your specific XBee UART instance
+  if (huart->Instance == UART5) // Or your specific XBee UART instance
   {
     xbee_platform_uart_tx_cplt_callback(huart);
   }
@@ -287,7 +286,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
   */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
-  if (huart->Instance == USART5) // Check if the error is from your XBee UART
+  if (huart->Instance == UART5) // Check if the error is from your XBee UART
   {
     // You can log huart->ErrorCode to see what specific error occurred
     // For example: printf("UART6 Error: 0x%lx\r\n", huart->ErrorCode);
@@ -334,7 +333,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
       //     if they are not designed for it. Setting a flag for the main loop
       //     to handle re-initialization might be safer.)
       //    Error_Handler(); // Or a less drastic, specific error handling routine
-    	test_var = test_var + 1;
+//    	test_var = test_var + 1;
     }
   }
   // Add else if for other UARTs if they have errors

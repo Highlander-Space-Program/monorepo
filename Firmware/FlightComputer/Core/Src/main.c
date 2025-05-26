@@ -61,6 +61,11 @@
 #define PERIODIC_ACK_INTERVAL_MS 1000
 #define ACK_PENDING_TIMEOUT_MS 5000 // Timeout for an ACK waiting for TX status
 
+#define VALVE_DELAY_MS 2000
+#define VALVE_FIRE_MS 3000
+#define FLASH_FREQUENCY_MS 1000
+#define CAN_SEND_INTERVAL_MS 50
+
 //0013A2004238A3E3
 #define TARGET_XBEE_ADDR_64_B0 0x00 // Example byte 0 (MSB)
 #define TARGET_XBEE_ADDR_64_B1 0x13 // Example byte 1
@@ -132,6 +137,9 @@ static const uint16_t g_target_xbee_network_addr = TARGET_XBEE_ADDR_16;
 uint8_t ack_byte_value;
 uint8_t tx_ack_payload[1];
 uint8_t last_command_received = 0xFF; // Stores the last command byte received via XBee
+
+static uint32_t last_can_message_dispatch_time = 0;
+static uint32_t prev_flash_trigger_time = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -141,8 +149,62 @@ static void MX_SPI1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_UART5_Init(void);
-/* USER CODE BEGIN PFP */
 
+/* USER CODE BEGIN PFP */
+void FLASH_ALL (uint32_t* board_can_ids, uint8_t numBoards) {
+  uint8_t short_board_id;
+//  uint32_t* board_uid;
+  uint32_t current_tick; // To store current time from HAL_GetTick()
+
+  // Get current time for the outer 1000ms check
+  current_tick = HAL_GetTick();
+
+  // Check if it's time to run the main flashing sequence (every FLASH_FREQUENCY_MS)
+  if (current_tick - prev_flash_trigger_time >= FLASH_FREQUENCY_MS) {
+    prev_flash_trigger_time = current_tick; // Update timestamp for this flash sequence activation
+
+    // Determine the number of boards to flash, based on original logic
+    // minus one because we dont want the pad controller itself.
+    int num_boards_to_process = GET_NUM_BOARD_CONFIGS() - 1;
+
+    for (int i = 0; i < num_boards_to_process; i++) {
+      // Get current time before checking the 50ms CAN send interval
+      current_tick = HAL_GetTick();
+
+      // Ensure 50ms has passed since the last CAN message was dispatched by this function.
+      // The 'last_can_message_dispatch_time != 0' check ensures that the very first message
+      // (or the first after a long pause/reset) isn't unnecessarily delayed.
+      if (last_can_message_dispatch_time != 0) {
+        uint32_t time_since_last_dispatch = current_tick - last_can_message_dispatch_time;
+        if (time_since_last_dispatch < CAN_SEND_INTERVAL_MS) {
+          // Not enough time has passed, so wait for the remainder of the interval
+          HAL_Delay(CAN_SEND_INTERVAL_MS - time_since_last_dispatch);
+        }
+      }
+
+      // Update the dispatch time for the current message *before* actually sending it.
+      // This marks the beginning of the 50ms slot for this message.
+      last_can_message_dispatch_time = HAL_GetTick();
+
+      // Prepare CAN message details
+
+//      board_uid = GET_BOARD_UID_FROM_CAN_ID (board_can_ids[i]);
+//      short_board_id = GET_SHORT_BOARD_ID (board_uid);
+      short_board_id = GET_SHORT_BOARD_ID_FROM_CAN_ID(board_can_ids[i]);
+      uint32_t ext_id = build_can_extended_id (SENDER_PAD_CONTROLLER, short_board_id, MSG_TYPE_FLASH_SIGNAL, 0x00);
+
+      // Send the CAN message
+      // Ensure 'data' and 'LENGTH' are defined and accessible in this scope.
+      // These would be your actual CAN payload and its length.
+      HAL_StatusTypeDef status = send_can_msg(ext_id, data, 0, &hcan1);
+
+      if (status != HAL_OK) {
+        // Indicate error, e.g., toggle an LED
+//        HAL_GPIO_TogglePin(STATUS_IND_GPIO_Port, STATUS_IND_Pin);
+      }
+    }
+  }
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -232,11 +294,79 @@ int main(void)
       Error_Handler();
   }
 
-  FLIGHT_COMPUTER_SETUP_ROUTINE();
+  // --- UART Interrupt Priority for XBee ---
+	// Ensure USART6 interrupt is enabled with appropriate priority
+	// This is crucial for timely processing of RX data and errors.
+	HAL_NVIC_SetPriority(UART5_IRQn, 5, 0); // Priority 5, Subpriority 0
+	HAL_NVIC_EnableIRQ(UART5_IRQn);
+
+	HAL_Delay(10); // Small delay before XBee initialization
+
+	// --- Initial XBee Platform and Device Initialization ---
+	xbee_platform_config(&huart5, 115200);
+	xbee_platform_init(); // This calls xbee_ser_open for the first time for huart6
+
+	// Initialize the XBee device structure
+	// The 'always_awake' variable is defined in USER CODE BEGIN PV
+	xbee_dev_init(&xbee, xbee_platform_serial(), always_awake, NULL);
+	xbee_dev_flowcontrol(&xbee, 0); // Assuming no hardware flow control (0 = disabled)
+	xbee_cmd_init_device(&xbee);    // Initialize AT command processor for this device
+
+	// Initial check for XBee module readiness
+	int status = 0;
+	uint32_t init_start_time = HAL_GetTick();
+	do {
+		xbee_dev_tick(&xbee); // Allow XBee library to process incoming/outgoing data
+		xbee_cmd_tick();      // Process AT command responses
+		status = xbee_cmd_query_status(&xbee); // Query basic XBee status
+		if ((HAL_GetTick() - init_start_time) > 5000) { // 5-second timeout
+			// printf("Timeout waiting for initial XBee query status.\r\n"); // Requires printf retargeting
+			Error_Handler(); // Or handle appropriately (e.g., log error, retry)
+			break;
+		}
+	} while (status == -EBUSY); // -EBUSY is a typical "busy" response from XBee lib
+
+	if (status != 0) {
+		// printf("Initial XBee query status failed: %d\r\n", status);
+		Error_Handler(); // Or handle appropriately
+	}
+
+	xbee_handler_init_rx_queue(); // Initialize your application's RX queue for XBee frames
+//	ack_byte_value = Create_Ack();
+	prev_ack_send_time_ms = HAL_GetTick();
+	g_periodic_ack_frame_id = 0; // Ensure it's initialized
+
+	// --- Board and CAN ID Setup ---
+	no2_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N02");
+	no3_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N03");
+	no4_board_uid = GET_BOARD_ID_FROM_PNID ("FV-N04");
+	pyro_board_uid = GET_BOARD_ID_FROM_PNID ("FV-PYRO");
+	pt01_board_uid = GET_BOARD_ID_FROM_PNID ("PT-01");
+	pt03_board_uid = GET_BOARD_ID_FROM_PNID ("PT-03");
+	pc01_board_uid = GET_BOARD_ID_FROM_PNID ("PC-01");
+
+	no2_can_id = GET_CAN_ID_FROM_BOARD_UID (no2_board_uid);
+	no3_can_id = GET_CAN_ID_FROM_BOARD_UID (no3_board_uid);
+	no4_can_id = GET_CAN_ID_FROM_BOARD_UID (no4_board_uid);
+	pyro_can_id = GET_CAN_ID_FROM_BOARD_UID (pyro_board_uid);
+	pt01_can_id = GET_CAN_ID_FROM_BOARD_UID (pt01_board_uid);
+	pt03_can_id = GET_CAN_ID_FROM_BOARD_UID (pt03_board_uid);
+	pc01_can_id = GET_CAN_ID_FROM_BOARD_UID (pc01_board_uid);
+
+	board_can_ids[0] = no2_can_id;
+	board_can_ids[1] = no3_can_id;
+	board_can_ids[2] = no4_can_id;
+	board_can_ids[3] = pyro_can_id;
+	board_can_ids[4] = pt01_can_id;
+	board_can_ids[5] = pt03_can_id;
+	board_can_ids[6] = pc01_can_id;
+
+
+	FLIGHT_COMPUTER_SETUP_ROUTINE(board_can_ids, NUM_BOARDS);
 
   //MS5607_Init(&hspi1, GPIOB, 12);
   W25Q_Reset();
-
+  write_enable();
 	//W25Q_Write_Page(1, 10,strlen(TxData), TxData);
 
   //position = W25Q_Read_NUM(1,2);

@@ -440,6 +440,7 @@ int main(void)
   HAL_Delay(10); // Small delay before XBee initialization
 
   // --- Initial XBee Platform and Device Initialization ---
+  xbee_platform_config(&huart6, 115200);
   xbee_platform_init(); // This calls xbee_ser_open for the first time for huart6
 
   // Initialize the XBee device structure
@@ -507,87 +508,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // Recommendation: Pet the Independent Watchdog here if used
-    // HAL_IWDG_Refresh(&hiwdg); // Assuming hiwdg is your IWDG handle
-
-    // --- UART/XBee Re-initialization Check (Robust Recovery) ---
-//    if (g_request_uart6_reinit)
-//    {
-//      // Atomically clear the flag to prevent re-entry if another interrupt occurs during this block
-//      uint32_t primask_status = __get_PRIMASK(); // Store current global interrupt state
-//      __disable_irq();                          // Disable global interrupts
-//      g_request_uart6_reinit = false;           // Clear the flag
-//      __set_PRIMASK(primask_status);            // Restore global interrupt state
-//
-//      // Optional: Log that a re-initialization is occurring
-//      // printf("Attempting UART6 and XBee re-initialization due to error...\r\n");
-//
-//      xbee_serial_t *xbee_uart_port = xbee_platform_serial();
-//      if (xbee_uart_port)
-//      {
-//        uint32_t current_baudrate = xbee_uart_port->baudrate; // Preserve current baudrate
-//
-//        // 1. Close the low-level serial port (calls HAL_UART_DeInit, flushes platform buffers)
-//        xbee_ser_close(xbee_uart_port);
-//        HAL_Delay(50); // Brief delay for peripheral to settle if necessary
-//
-//        // 2. Re-open the low-level serial port
-//        // (calls HAL_UART_Init, resets platform buffers, starts HAL_UART_Receive_IT)
-//        if (xbee_ser_open(xbee_uart_port, current_baudrate) != 0)
-//        {
-//          // printf("FATAL: UART6 re-open (xbee_ser_open) failed during recovery!\r\n");
-//          Error_Handler(); // This is a critical failure if re-open fails
-//        }
-//
-//        // 3. Re-initialize the XBee device context with the re-opened serial port
-//        xbee_dev_init(&xbee, xbee_uart_port, (bool_t)always_awake, NULL);
-//
-//        // 4. Re-run essential XBee post-init steps
-//        xbee_dev_flowcontrol(&xbee, 0); // Re-apply flow control setting
-//        xbee_cmd_init_device(&xbee);    // Re-initialize AT command processor
-//
-//        // 5. Verify XBee module readiness again
-//        int status_reinit = 0;
-//        uint32_t reinit_loop_start_time = HAL_GetTick();
-//        do {
-//            xbee_dev_tick(&xbee); // Allow XBee library to process
-//            xbee_cmd_tick();      // Allow AT command processor to work
-//            status_reinit = xbee_cmd_query_status(&xbee);
-//            if ((HAL_GetTick() - reinit_loop_start_time) > 5000) { // 5-second timeout
-//                // printf("Timeout waiting for XBee query status after re-init.\r\n");
-//                // Error_Handler(); // Or decide on less drastic action for repeated failures
-//                break;
-//            }
-//        } while (status_reinit == -EBUSY);
-//
-//        if (status_reinit != 0) {
-//            // printf("XBee query status failed after re-init: %d\r\n", status_reinit);
-//            // The g_request_uart6_reinit flag is false, so it won't loop here indefinitely.
-//            // The next UART error might trigger this recovery again.
-//            // Consider more robust error counting or alternative recovery if this happens frequently.
-//        } else {
-//            // printf("UART6 and XBee re-initialized successfully after error.\r\n");
-//        }
-//
-//        // 6. Re-initialize application-level XBee handlers and state
-//        xbee_handler_init_rx_queue(); // Reset your application's RX queue
-//
-//        // Reset any other relevant application state related to XBee communication
-//        uint8_t last_command_received_after_reinit = 0xFF; // Local var for clarity
-//        last_command_received = last_command_received_after_reinit; // Reset last command state
-//        ack_byte_value = Create_Ack(); // Recreate ACK if needed
-//        prev_ack_send_time_ms = HAL_GetTick(); // Reset ACK timing
-//        // g_periodic_ack_frame_id = 0; // Reset if this is part of your XBee state
-//
-//      } // end if (xbee_uart_port)
-//      else
-//      {
-//        // This should ideally never happen if xbee_platform_serial() is robust
-//        // printf("FATAL: xbee_platform_serial() returned NULL during recovery!\r\n");
-//        Error_Handler();
-//      }
-//    } // end if (g_request_uart6_reinit)
-
     // --- Regular XBee Processing and Application Logic ---
     xbee_dev_tick(&xbee); // Processes XBee library events, RX data, TX status
 	xbee_cmd_tick();      // Processes AT command responses
