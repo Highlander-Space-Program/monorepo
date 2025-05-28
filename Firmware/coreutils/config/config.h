@@ -21,7 +21,10 @@ enum MESSAGE_TYPE {
     MSG_TYPE_HEATER               = 4,
     MSG_TYPE_LED                  = 5,
     MSG_TYPE_FLASH_SIGNAL         = 6,
-    // --- Added Status Types ---
+    MSG_TYPE_IMU_ACCEL            = 7,
+    MSG_TYPE_IMU_GYRO             = 8,
+    MSG_TYPE_BAROMETER            = 9,
+	// --- Added Status Types ---
     MSG_TYPE_BREAKWIRE_STATUS     = 19,
     MSG_TYPE_IGNITER_STATUS       = 20,
     MSG_TYPE_AUTO_MODE_STATUS     = 21,

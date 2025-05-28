@@ -40,6 +40,7 @@ HAL_StatusTypeDef send_can_msg(const uint32_t extId, const uint8_t *data, const 
 }
 
 // returns the shifted extended ID
+//0x12010310
 uint32_t build_can_extended_id(uint8_t sender, uint8_t boardId, uint8_t msgType, uint8_t instance) {
     uint32_t extId = 0;
     extId |= ((uint32_t)sender << EXT_ID_SENDER_SHIFT);

@@ -35,5 +35,10 @@
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Firmware/Middlewares</locationURI>
 		</link>
+		<link>
+			<name>Core/Inc/coreutils</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Firmware/coreutils</locationURI>
+		</link>
 	</linkedResources>
 </projectDescription>

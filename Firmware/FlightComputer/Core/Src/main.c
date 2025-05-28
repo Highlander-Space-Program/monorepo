@@ -52,7 +52,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define NUM_BOARDS 7
+#define NUM_BOARDS 8
 #define XBEE_DEVICE_INIT_TIMEOUT_MS 10000 // Timeout for XBee library initial handshake with module
 #define XBEE_AT_COMMAND_TIMEOUT_MS  5000  // Default timeout for AT commands sent via handler
 
@@ -109,6 +109,7 @@ uint32_t* no4_board_uid;
 uint32_t* pyro_board_uid;
 uint32_t* pt01_board_uid;
 uint32_t* pt03_board_uid;
+uint32_t* pt05_board_uid;
 uint32_t* pc01_board_uid;
 
 uint32_t no2_can_id;
@@ -117,6 +118,7 @@ uint32_t no4_can_id;
 uint32_t pyro_can_id;
 uint32_t pt01_can_id;
 uint32_t pt03_can_id;
+uint32_t pt05_can_id;
 uint32_t pc01_can_id;
 
 uint32_t board_can_ids[NUM_BOARDS];
@@ -343,6 +345,7 @@ int main(void)
 	pyro_board_uid = GET_BOARD_ID_FROM_PNID ("FV-PYRO");
 	pt01_board_uid = GET_BOARD_ID_FROM_PNID ("PT-01");
 	pt03_board_uid = GET_BOARD_ID_FROM_PNID ("PT-03");
+	pt05_board_uid = GET_BOARD_ID_FROM_PNID ("PT-05");
 	pc01_board_uid = GET_BOARD_ID_FROM_PNID ("PC-01");
 
 	no2_can_id = GET_CAN_ID_FROM_BOARD_UID (no2_board_uid);
@@ -351,6 +354,7 @@ int main(void)
 	pyro_can_id = GET_CAN_ID_FROM_BOARD_UID (pyro_board_uid);
 	pt01_can_id = GET_CAN_ID_FROM_BOARD_UID (pt01_board_uid);
 	pt03_can_id = GET_CAN_ID_FROM_BOARD_UID (pt03_board_uid);
+	pt05_can_id = GET_CAN_ID_FROM_BOARD_UID (pt05_board_uid);
 	pc01_can_id = GET_CAN_ID_FROM_BOARD_UID (pc01_board_uid);
 
 	board_can_ids[0] = no2_can_id;
@@ -359,21 +363,22 @@ int main(void)
 	board_can_ids[3] = pyro_can_id;
 	board_can_ids[4] = pt01_can_id;
 	board_can_ids[5] = pt03_can_id;
-	board_can_ids[6] = pc01_can_id;
+	board_can_ids[6] = pt05_can_id;
+	board_can_ids[7] = pc01_can_id;
 
 
 	FLIGHT_COMPUTER_SETUP_ROUTINE(board_can_ids, NUM_BOARDS);
 
   //MS5607_Init(&hspi1, GPIOB, 12);
-  W25Q_Reset();
-  write_enable();
+//  W25Q_Reset();
+//  write_enable();
 	//W25Q_Write_Page(1, 10,strlen(TxData), TxData);
 
   //position = W25Q_Read_NUM(1,2);
   //pageNum = (position / 255) + 2
   //W25Q_Write_NUM(1, 15, tNum1);
 
-  W25Q_Write_NUM(1, 10, tNum1);
+//  W25Q_Write_NUM(1, 10, tNum1);
 
   /* USER CODE END 2 */
 
@@ -384,6 +389,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  FLASH_ALL (board_can_ids, NUM_BOARDS);
+	  HAL_Delay(5);
 	//MS5607Update();
 	//temp = MS5607GetTemperatureC();
 	//press = MS5607GetPressurePa();
@@ -391,13 +398,13 @@ int main(void)
 
 	//W25Q_Write_NUM(pageNum, position - (pageNum * 255), alt);
 
-	position += 2;
-	pageNum = (position / 255) + 2;
+//	position += 2;
+//	pageNum = (position / 255) + 2;
 
-	rNum1 = W25Q_Read_NUM(1, 15);
+//	rNum1 = W25Q_Read_NUM(1, 15);
 
 
-	HAL_Delay (100);
+//	HAL_Delay (100);
 	//W25Q_Read(0, 250, 20, RxData);
   }
   /* USER CODE END 3 */

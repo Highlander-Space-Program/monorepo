@@ -207,6 +207,7 @@ int main(void)
     STATUS_IND_Toggle();
     HAL_Delay(500);
     STATUS_IND_Toggle();
+    HAL_Delay(1000);
 
   // Configure ADC
   adc.hspi = &hspi1;

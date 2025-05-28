@@ -54,7 +54,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define NUM_BOARDS 7
+#define NUM_BOARDS 8
 #define XBEE_DEVICE_INIT_TIMEOUT_MS 10000 // Timeout for XBee library initial handshake with module
 #define XBEE_AT_COMMAND_TIMEOUT_MS  5000  // Default timeout for AT commands sent via handler
 
@@ -128,6 +128,7 @@ uint32_t* no4_board_uid;
 uint32_t* pyro_board_uid;
 uint32_t* pt01_board_uid;
 uint32_t* pt03_board_uid;
+uint32_t* pt05_board_uid;
 uint32_t* fc01_board_uid;
 
 uint32_t no2_can_id;
@@ -136,6 +137,7 @@ uint32_t no4_can_id;
 uint32_t pyro_can_id;
 uint32_t pt01_can_id;
 uint32_t pt03_can_id;
+uint32_t pt05_can_id;
 uint32_t fc01_can_id;
 
 uint32_t board_can_ids[NUM_BOARDS];
@@ -480,6 +482,7 @@ int main(void)
   pyro_board_uid = GET_BOARD_ID_FROM_PNID ("FV-PYRO");
   pt01_board_uid = GET_BOARD_ID_FROM_PNID ("PT-01");
   pt03_board_uid = GET_BOARD_ID_FROM_PNID ("PT-03");
+  pt05_board_uid = GET_BOARD_ID_FROM_PNID ("PT-05");
   fc01_board_uid = GET_BOARD_ID_FROM_PNID ("FC-01");
 
   no2_can_id = GET_CAN_ID_FROM_BOARD_UID (no2_board_uid);
@@ -488,6 +491,7 @@ int main(void)
   pyro_can_id = GET_CAN_ID_FROM_BOARD_UID (pyro_board_uid);
   pt01_can_id = GET_CAN_ID_FROM_BOARD_UID (pt01_board_uid);
   pt03_can_id = GET_CAN_ID_FROM_BOARD_UID (pt03_board_uid);
+  pt05_can_id = GET_CAN_ID_FROM_BOARD_UID (pt05_board_uid);
   fc01_can_id = GET_CAN_ID_FROM_BOARD_UID (fc01_board_uid);
 
   board_can_ids[0] = no2_can_id;
@@ -496,7 +500,8 @@ int main(void)
   board_can_ids[3] = pyro_can_id;
   board_can_ids[4] = pt01_can_id;
   board_can_ids[5] = pt03_can_id;
-  board_can_ids[6] = fc01_can_id;
+  board_can_ids[6] = pt05_can_id;
+  board_can_ids[7] = fc01_can_id;
 
   PAD_CONTROLLER_SETUP_ROUTINE (board_can_ids, NUM_BOARDS);
   /* USER CODE END 2 */
